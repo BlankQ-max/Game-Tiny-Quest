@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tiny Quest</title>
+<link rel="stylesheet" href="game.css">
+</head>
+<body>
+<main>
+ <section id="mapView" hidden>
+  <canvas id="cv" width="1040" height="880" aria-label="Game map"></canvas>
+  <div class="side">
+  <div class="dash" id="hud"></div>
+  <div id="status" aria-live="polite"></div>
+  <div class="pad" id="pad">
+   <button class="u" data-d="0,-1" aria-label="Up">▲</button>
+   <button data-d="-1,0" aria-label="Left" style="grid-row:2">◀</button>
+   <button data-d="0,1" aria-label="Down" style="grid-row:2">▼</button>
+   <button data-d="1,0" aria-label="Right" style="grid-row:2">▶</button>
+  </div>
+  <p style="text-align:center;margin:10px 0 4px"><button id="quit">Save and exit to menu</button></p>
+  <p class="muted" style="text-align:center">Arrow keys or WASD to move, hold to run. Bump into slimes, chests, and shops.</p>
+  </div>
+ </section>
+ <section id="battleView" hidden></section>
+ <section id="textView" hidden></section>
+</main>
+<script src="game.js"></script>
+<script type="module" src="auth-guard.js"></script>
+</body>
+</html>

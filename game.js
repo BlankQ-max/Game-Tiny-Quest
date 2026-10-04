@@ -1,0 +1,375 @@
+const $=id=>document.getElementById(id);
+const R=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const T=40,COLS=13,ROWS=11;
+
+const MAPS=[
+{n:"Thimble Hollow",c:['#93c85e','#8abf55'],w:'🌳',rows:[
+"#############",
+"#.....~~....#",
+"#.H...~~..S.#",
+"#.....~~....#",
+"#...........#",
+"#.P........Q>",
+"#...........#",
+"#..##.......#",
+"#..##...##..#",
+"#...........#",
+"#############"]},
+{n:"Whispering Forest",c:['#5c9a48','#548f42'],w:'🌲',respawn:1,rows:[
+"#############",
+"#..r...#..C.#",
+"#.###..#.g..#",
+"#...#....##.#",
+"#.g.#..r....#",
+"<P.........Q>",
+"#.#####.....#",
+"#...C..~~.g.#",
+"#.r....~~...#",
+"#.g.....~...#",
+"#############"]},
+{n:"Slime Caves",c:['#6b6b76','#63636e'],w:'🪨',rows:[
+"#############",
+"#...#...#..k#",
+"#...#.r.#...#",
+"#.r.....#.r.#",
+"#...##.....C#",
+"<P.........QD",
+"#.....##....#",
+"#.....#..r..#",
+"#.##.....##.#",
+"#....r......#",
+"#############"]},
+{n:"Throne Room",c:['#7a3b4a','#71354a'],w:'🧱',rows:[
+"#############",
+"#...........#",
+"#.....K.....#",
+"#...........#",
+"#...#...#...#",
+"<P..........#",
+"#...........#",
+"#...#...#...#",
+"#...........#",
+"#...........#",
+"#############"]}];
+const DEF={
+ g:{name:"Green Slime",color:"#5cc95c",hp:16,atk:[2,4],heavy:.2,c:[3,6],j:.5},
+ r:{name:"Red Slime",color:"#e0463c",hp:22,atk:[3,6],heavy:.35,c:[6,10],j:.8},
+ K:{name:"Slime King",color:"#5b6ee1",hp:45,atk:[5,8],heavy:.35,king:1}};
+const CH={'1:10,1':{c:20,j:2},'1:4,7':{c:15,j:3},'2:11,4':{c:35,pot:2}};
+const SW=[[25,2],[50,4],[90,6]],AR=[[20,2],[45,4],[80,6]];
+
+function svg(d){
+ const c=d.color;
+ return `<svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg"><path d="M8 72 Q4 28 50 20 Q96 28 92 72 Z" fill="${c}" stroke="#0004" stroke-width="3"/><ellipse cx="34" cy="38" rx="9" ry="5" fill="#fff5" transform="rotate(-25 34 38)"/><circle cx="37" cy="50" r="8" fill="#fff"/><circle cx="63" cy="50" r="8" fill="#fff"/><circle cx="39" cy="51" r="3.5" fill="#222"/><circle cx="65" cy="51" r="3.5" fill="#222"/><path d="M40 63 Q50 70 60 63" stroke="#222" stroke-width="3" fill="none" stroke-linecap="round"/>${d.king?'<path d="M30 26 L34 6 L43 18 L50 2 L57 18 L66 6 L70 26 Z" fill="#f6c343" stroke="#a27a0c" stroke-width="2.5"/>':''}</svg>`}
+const IMG={};
+for(const k in DEF){const i=new Image();i.onload=()=>mode==='map'&&drawMap();i.src='data:image/svg+xml,'+encodeURIComponent(svg(DEF[k]));IMG[k]=i}
+
+/* Arlo: look changes with sword level (blade) and armor level (tunic, pads, helm) */
+function hero(sw=0,ar=0,f=0,bk=0,ln=0){
+ const tun=['#4f8f5a','#9a6a3a','#8b94a3','#d7b03a'][ar],dk='#0004';
+ const bl=['#b8bcc4','#e3edf7','#f2c94c','#6fe3ff'][sw];
+ const lo=f===1?-6:0,ro=f===2?-6:0,sa=f===1?24:f===2?-24:0;
+ return `<svg class="hero" viewBox="0 -8 60 88" xmlns="http://www.w3.org/2000/svg">
+ <ellipse cx="30" cy="77" rx="17" ry="3" fill="#0003"/>
+ <g transform="translate(0 ${f?-2:0}) rotate(${ln} 30 72)">
+ <path d="M19 34 L${f===1?7:f===2?11:9} ${f===1?62:f===2?68:66} L27 60 Z" fill="#c9503c" stroke="${dk}" stroke-width="1.5"/>
+ <g transform="translate(0 ${lo})"><rect x="21" y="56" width="7" height="16" rx="2" fill="#3b3a4a"/><rect x="19" y="68" width="10" height="7" rx="3" fill="#5a3a22" stroke="${dk}"/></g>
+ <g transform="translate(0 ${ro})"><rect x="32" y="56" width="7" height="16" rx="2" fill="#3b3a4a"/><rect x="31" y="68" width="10" height="7" rx="3" fill="#5a3a22" stroke="${dk}"/></g>
+ <g transform="rotate(${sa} 16 36)"><rect x="12" y="34" width="8" height="18" rx="4" fill="${tun}" stroke="${dk}" stroke-width="1.5"/><circle cx="16" cy="53" r="4" fill="#f1c7a0"/></g>
+ <rect x="18" y="32" width="24" height="26" rx="6" fill="${tun}" stroke="${dk}" stroke-width="2"/>
+ <rect x="18" y="49" width="24" height="5" fill="#5a3a22"/><rect x="28" y="48" width="4" height="7" rx="1" fill="#f6c343"/>
+ ${bk?`<path d="M20 32 Q30 29 40 32 L45 63 Q30 69 15 63Z" fill="#c9503c" stroke="${dk}" stroke-width="2"/>`:''}
+ <rect x="40" y="34" width="8" height="16" rx="4" fill="${tun}" stroke="${dk}" stroke-width="1.5"/><circle cx="46" cy="52" r="4" fill="#f1c7a0"/>
+ ${ar>=1?`<circle cx="17" cy="36" r="6" fill="${tun}" stroke="${dk}" stroke-width="2"/><circle cx="43" cy="36" r="6" fill="${tun}" stroke="${dk}" stroke-width="2"/>`:''}
+ ${sw>=3?`<rect x="41" y="10" width="9" height="42" rx="4" fill="${bl}" opacity=".35"/>`:''}
+ <rect x="44.5" y="12" width="3" height="38" rx="1.5" fill="${bl}" stroke="${dk}"/><path d="M44.5 12 L46 7 L47.5 12Z" fill="${bl}" stroke="${dk}"/>
+ <rect x="41" y="49" width="10" height="3" rx="1" fill="#8a6a2a"/><rect x="45" y="52" width="2" height="5" fill="#5a3a22"/>
+ <circle cx="30" cy="22" r="12" fill="${bk?(ar>=2?'#9aa3b2':'#5a3a22'):'#f1c7a0'}" stroke="${dk}" stroke-width="2"/>
+ ${bk?'':`<circle cx="26" cy="23" r="1.8" fill="#222"/><circle cx="34" cy="23" r="1.8" fill="#222"/><path d="M26 28 Q30 31 34 28" stroke="#222" stroke-width="1.6" fill="none" stroke-linecap="round"/>`}
+ ${bk?'':ar>=2?`<path d="M17 22 Q17 6 30 6 Q43 6 43 22 L38 17 Q30 13 22 17Z" fill="#9aa3b2" stroke="${dk}" stroke-width="2"/>`:`<path d="M18 21 Q19 6 32 8 Q43 9 42 21 Q36 13 30 14 Q23 14 18 21Z" fill="#5a3a22" stroke="${dk}"/>`}
+ ${ar>=3?`<path d="M30 6 Q36 -4 46 2 Q39 5 35 10Z" fill="#c9503c" stroke="${dk}"/>`:''}
+ </g></svg>`}
+const HI={};
+function heroImg(f,v){
+ const b=P.sw+'-'+P.ar;
+ if(!HI[b])HI[b]=[0,1,2,3,4,5,6,7,8].map(n=>{const fr=n%3,vw=(n-fr)/3,i=new Image();i.onload=()=>mode==='map'&&drawMap();i.src='data:image/svg+xml,'+encodeURIComponent(hero(P.sw,P.ar,fr,vw===1,vw===2&&fr?9:0));return i});
+ const a=HI[b],h=a[v*3+f];return h.complete?h:a[0];
+}
+let G,F,INIT,SP,cur,pl,P,mode='text',B,busy,log=[],frame=0,curKey,face=1,vw=0,vis={x:0,y:0},dust=[];
+const isMoving=()=>Math.abs(vis.x-pl.x)>.001||Math.abs(vis.y-pl.y)>.001;
+const cv=$('cv'),ctx=cv.getContext('2d');ctx.scale(2,2);
+const key=(x,y)=>x+','+y;
+function view(v){['mapView','battleView','textView'].forEach(x=>$(x).hidden=x!==v)}
+function setMsg(t){$('status').textContent=t}
+function showText(o,cb,btn){
+ mode='text';view('textView');
+ $('textView').innerHTML=`<div class="card">${o.pic||''}<h2 style="${o.big?'font-size:2.4rem':''}">${o.title}</h2>${o.text.split("\n\n").map(t=>`<p>${t}</p>`).join("")}<button class="primary" id="ok">${btn||'Continue'}</button></div>`;
+ $('ok').onclick=cb;$('ok').focus();
+}
+function toMap(){mode='map';view('mapView');hud();drawMap()}
+function quest(){
+ const left=Object.keys(F[2]).length;
+ if(P.key)return "You have the key! Take it to the locked door at the end of the caves and defeat the Slime King.";
+ if(P.sw+P.ar<2)return "Hunt forest slimes for coins and jelly, then upgrade your gear at the village shop.";
+ return left?`Clear the Slime Caves (${left} slime${left>1?'s':''} left), then open the key chest.`:"Open the key chest at the far end of the caves.";
+}
+function hud(){
+ save();
+ const pct=P.hp/P.max*100,low=pct<30,nm=['Village','Forest','Caves','Throne'];
+ $('hud').innerHTML=`<div class="por">${hero(P.sw,P.ar)}</div>
+ <div><div style="font-size:.85rem"><b>Arlo</b> · ${MAPS[cur].n}</div><div class="dbar"><i style="width:${pct}%;${low?'background:#e0463c':''}"></i><span>HP ${P.hp} / ${P.max}</span></div></div>
+ <div class="chips"><span>💰 ${P.coins}</span><span>🟢 ${P.jelly}</span><span>🌰 ${P.pot}</span><span>⚔ ${4+P.sw*2}–${7+P.sw*2}</span><span>🛡 −${P.ar}</span><span>🗝️ ${P.key?'Yes':'No'}</span></div>
+ <div class="quest"><b>Quest:</b> ${quest()}</div>
+ <div class="route">${nm.map((n,i)=>`<b class="${i===cur?'on':''}">${n}${i===3&&!P.key?' 🔒':''}</b>`).join(' › ')}</div>`;
+}
+
+function newGame(sv){
+ G=[];INIT=[];SP=[];F=[];
+ MAPS.forEach((m,i)=>{
+  const g=m.rows.map(r=>r.split('')),f={},sp={};
+  g.forEach((row,y)=>row.forEach((c,x)=>{
+   if(c==='P'||c==='Q'){sp[c]={x,y};row[x]='.'}
+   if(DEF[c]){f[key(x,y)]=c;row[x]='.'}}));
+  G.push(g);INIT.push(f);F.push({...f});SP.push(sp)});
+ P={hp:30,max:30,pot:2,coins:10,jelly:0,sw:0,ar:0,key:0,cd:0,guard:false,opened:{}};
+ if(!sv)return go(0,'P');
+ P={...P,...sv.P,guard:false};G=sv.G.map(g=>g.map(r=>r.split('')));F=sv.F;cur=sv.cur;pl={...sv.pl};vis={...pl};
+ setMsg('Welcome back, '+user.name+'.');toMap();
+}
+/* ---------- login / accounts (stored on this device) ---------- */
+let user=null,authMode='in';
+const LS={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
+const users=()=>LS.get('tq_users')||{};
+async function hash(salt,pw){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(salt+':'+pw));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+function save(){
+ if(!user||user.guest||!P||!G)return;
+ const all=users(),a=all[user.id];if(!a)return;
+ a.save={P:{...P,guard:false},cur,pl,G:G.map(g=>g.map(r=>r.join(''))),F};
+ LS.set('tq_users',all);
+ if(window.tqCloud)window.tqCloud.save(a.save);
+}
+function showLogin(){
+ mode='text';view('textView');user=null;
+ const up=authMode==='up';
+ $('textView').innerHTML=`<div class="card"><div style="text-align:center">${hero(0,0)}<h1>Tiny Quest</h1></div>
+ <div class="tabs"><button id="tIn" class="${up?'':'on'}">Log in</button><button id="tUp" class="${up?'on':''}">Create account</button></div>
+ <label for="u">Username</label><input id="u" maxlength="16" autocomplete="username" autocapitalize="off">
+ <label for="p">Password</label><input id="p" type="password" maxlength="64" autocomplete="${up?'new-password':'current-password'}">
+ ${up?`<label for="p2">Confirm password</label><input id="p2" type="password" maxlength="64" autocomplete="new-password">`:''}
+ <p id="err" role="alert" style="color:var(--hp);min-height:1.4em;margin:8px 0"></p>
+ <div class="list"><button class="primary" id="go">${up?'Create account':'Log in'}</button><button id="guest">Play as guest</button></div>
+ <p class="muted" style="margin-top:12px">Accounts are saved on this device only. Your password is hashed in your browser and never sent anywhere. Guests can play, but progress is not saved.</p></div>`;
+ $('tIn').onclick=()=>{authMode='in';showLogin()};
+ $('tUp').onclick=()=>{authMode='up';showLogin()};
+ $('guest').onclick=()=>{user={name:'Guest',guest:1};menu()};
+ const go=async()=>{
+  const n=$('u').value.trim(),pw=$('p').value,err=t=>{$('err').textContent=t};
+  if(!/^[A-Za-z0-9_]{3,16}$/.test(n))return err("Username: 3 to 16 letters, numbers, or underscores.");
+  if(pw.length<4)return err("Password must be at least 4 characters.");
+  const all=users(),id=n.toLowerCase();
+  try{
+   if(up){
+    if(pw!==$('p2').value)return err("Passwords do not match.");
+    if(all[id])return err("That username is already taken on this device.");
+    const salt=crypto.getRandomValues(new Uint32Array(2)).join('-');
+    all[id]={name:n,salt,hash:await hash(salt,pw),save:null};
+    if(!LS.set('tq_users',all))return err("This browser is blocking saved accounts. Try guest play.");
+   }else{
+    const a=all[id];
+    if(!a||a.hash!==await hash(a.salt,pw))return err("Wrong username or password.");
+   }
+  }catch(x){return err("Login is not available in this browser. Try guest play.")}
+  user={name:all[id].name,id,guest:0};menu();
+ };
+ $('go').onclick=go;
+ ['u','p','p2'].forEach(i=>{const el=$(i);if(el)el.onkeydown=e=>{if(e.key==='Enter')go()}});
+ $('u').focus();
+}
+function menu(){
+ mode='text';view('textView');
+ const sv=user.guest?null:(users()[user.id]||{}).save;
+ $('textView').innerHTML=`<div class="card"><div style="text-align:center">${hero(sv?sv.P.sw:0,sv?sv.P.ar:0)}</div><h2>Welcome, ${user.name}</h2>
+ ${sv?`<p>Saved game: ${MAPS[sv.cur].n}, ${sv.P.coins} coins, sword level ${sv.P.sw}, armor level ${sv.P.ar}${sv.P.key?', key in hand':''}.</p>`:`<p class="muted">${user.guest?"Guest play does not save your progress.":"No saved game yet."}</p>`}
+ <div class="list">${sv?'<button class="primary" id="m1">Continue</button>':''}<button id="m2" class="${sv?'':'primary'}">New game</button><button id="m3">Log out</button></div></div>`;
+ if(sv)$('m1').onclick=()=>newGame(sv);
+ $('m2').onclick=()=>title();
+ $('m3').onclick=()=>window.tqLogout&&window.tqLogout();
+ (sv?$('m1'):$('m2')).focus();
+}
+$('quit').onclick=()=>{save();menu()};
+
+function title(){
+ showText({big:1,pic:hero(0,0),title:"Tiny Quest",text:"The Slime King has swallowed the Moon Crumb, the little light that keeps Thimble Hollow warm. You are Arlo, the village handyman, and nobody else volunteered.\n\nBuy supplies in the village, hunt slimes in the forest for coins and jelly, upgrade your gear, then find the key in the slime caves. Only the key opens the throne room."},()=>newGame(),"Start the quest");
+}
+function go(i,w){
+ cur=i;if(MAPS[i].respawn)F[i]={...INIT[i]};
+ pl={...(SP[i][w]||SP[i].P)};vis={...pl};held.length=0;setMsg("Entered "+MAPS[i].n+".");toMap();
+}
+
+function move(dx,dy){
+ if(mode!=='map'||isMoving())return;
+ const nx=pl.x+dx,ny=pl.y+dy;
+ if(nx<0||ny<0||nx>=COLS||ny>=ROWS)return;
+ if(dx){face=dx;vw=2}else vw=dy<0?1:0;
+ const c=G[cur][ny][nx],k=key(nx,ny);
+ if(F[cur][k])return startBattle(k);
+ if(c==='#'||c==='~')return;
+ if(c==='H'){P.hp=P.max;P.cd=0;setMsg("You rest at the house. HP fully restored.");return hud()}
+ if(c==='S')return shop();
+ if(c==='C'||c==='k')return chest(nx,ny,c);
+ if(c==='>')return go(cur+1,'P');
+ if(c==='<')return go(cur-1,'Q');
+ if(c==='D'){if(P.key)return go(cur+1,'P');return setMsg("The throne door is locked. Find the key in this cave.")}
+ pl={x:nx,y:ny};setMsg("");drawMap();
+}
+function chest(x,y,c){
+ if(c==='k'){
+  if(Object.keys(F[cur]).length)return setMsg("Slimes still guard this chest. Defeat them all first.");
+  P.key=1;G[cur][y][x]='.';setMsg("You found the Throne Room key! 🗝️");return hud()||drawMap();
+ }
+ const r=CH[cur+':'+x+','+y]||{c:10};
+ P.coins+=r.c||0;P.jelly+=r.j||0;P.pot+=r.pot||0;G[cur][y][x]='.';
+ setMsg(`Chest opened: +${r.c||0} coins${r.j?`, +${r.j} jelly`:''}${r.pot?`, +${r.pot} acorn snacks`:''}.`);
+ hud();drawMap();
+}
+const KM={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]},held=[];
+addEventListener('keydown',e=>{
+ const m=KM[e.key];if(!m||mode!=='map')return;
+ e.preventDefault();if(!held.includes(e.key))held.push(e.key);move(...m);
+});
+addEventListener('keyup',e=>{const i=held.indexOf(e.key);if(i>=0)held.splice(i,1)});
+document.querySelectorAll('#pad button').forEach(b=>{
+ const k='B'+b.dataset.d;KM[k]=b.dataset.d.split(',').map(Number);
+ const off=()=>{const i=held.indexOf(k);if(i>=0)held.splice(i,1)};
+ b.onpointerdown=e=>{e.preventDefault();if(!held.includes(k))held.push(k);move(...KM[k])};
+ b.onpointerup=b.onpointerleave=b.onpointercancel=off;
+});
+
+function shop(msg){
+ save();
+ mode='text';view('textView');
+ const s=SW[P.sw],a=AR[P.ar];
+ const b=(id,l,ok)=>`<button id="${id}" ${ok?'':'disabled'}>${l}</button>`;
+ $('textView').innerHTML=`<div class="card"><h2>Village Shop</h2><p class="muted">💰 ${P.coins} coins · 🟢 ${P.jelly} jelly</p><p>${msg||"Slime jelly makes excellent gear. Bring me some!"}</p><div class="list">
+ ${b('b1',`🌰 Acorn snack, heals 9 (you have ${P.pot}) — 8 coins`,P.coins>=8&&P.pot<9)}
+ ${b('b2',s?`⚔ Sword upgrade, +2 attack — ${s[0]} coins, ${s[1]} jelly`:'⚔ Sword fully upgraded',s&&P.coins>=s[0]&&P.jelly>=s[1])}
+ ${b('b3',a?`🛡 Armor upgrade, -1 damage taken — ${a[0]} coins, ${a[1]} jelly`:'🛡 Armor fully upgraded',a&&P.coins>=a[0]&&P.jelly>=a[1])}
+ <button class="primary" id="b4">Leave shop</button></div></div>`;
+ $('b1').onclick=()=>{P.coins-=8;P.pot++;shop("One acorn snack, fresh.")};
+ $('b2').onclick=()=>{P.coins-=s[0];P.jelly-=s[1];P.sw++;shop("Your sword gleams.")};
+ $('b3').onclick=()=>{P.coins-=a[0];P.jelly-=a[1];P.ar++;shop("A sturdier fit.")};
+ $('b4').onclick=toMap;
+}
+
+function drawMap(){
+ const m=MAPS[cur];
+ ctx.textAlign='center';ctx.textBaseline='middle';
+ for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+  const c=G[cur][y][x];
+  ctx.fillStyle=c==='~'?'#4a90c8':m.c[(x+y)%2];
+  ctx.fillRect(x*T,y*T,T,T);
+  ctx.font='30px serif';
+  const e={'#':m.w,'H':'🏠','S':'🏪','C':'🎁','k':'🧰','>':'➡️','<':'⬅️','D':'🚪'}[c];
+  if(e)ctx.fillText(e,x*T+T/2,y*T+T/2+2);
+ }
+ const bob=frame%2*2;
+ for(const k in F[cur]){
+  const [x,y]=k.split(',').map(Number),id=F[cur][k],big=DEF[id].king;
+  if(IMG[id].complete)ctx.drawImage(IMG[id],x*T+(big?0:3),y*T+(big?-2:6)+bob,big?T:T-6,big?T:T-12);
+ }
+ dust.forEach(d=>{ctx.globalAlpha=Math.max(0,d.l)*.55;ctx.fillStyle='#efe9cf';ctx.beginPath();ctx.arc(d.x,d.y-(1-d.l)*8,2+(1-d.l)*4,0,7);ctx.fill()});ctx.globalAlpha=1;
+ const mv=isMoving(),hi=heroImg(mv?1+Math.floor(performance.now()/90)%2:0,vw);
+ if(hi.complete){ctx.save();ctx.translate(vis.x*T+T/2,0);ctx.scale(face,1);ctx.drawImage(hi,-14,vis.y*T-2+(mv?0:frame%2),28,T+2);ctx.restore()}
+}
+setInterval(()=>frame++,450);
+let last=performance.now();
+function loop(t){
+ const dt=Math.min(.05,(t-last)/1000);last=t;
+ if(G&&pl){const sp=9*dt;['x','y'].forEach(a=>{const d=pl[a]-vis[a];vis[a]=Math.abs(d)<=sp?pl[a]:vis[a]+Math.sign(d)*sp});
+  if(mode==='map'){
+   if(isMoving()&&Math.random()<.5)dust.push({x:vis.x*T+T/2-(vw===2?face*8:0),y:vis.y*T+T-4,l:1});
+   for(let i=dust.length-1;i>=0;i--){dust[i].l-=dt*3;if(dust[i].l<=0)dust.splice(i,1)}
+   if(!isMoving()&&held.length)move(...KM[held[held.length-1]]);
+   drawMap()}}
+ requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+
+/* ---------- battle ---------- */
+function startBattle(k){
+ curKey=k;const d=DEF[F[cur][k]];
+ B={...d,max:d.hp,intent:'n'};rollIntent();
+ log=[`A ${B.name} ${B.king?'rises from the throne, crown wobbling.':'wobbles into your path!'}`];
+ busy=false;P.guard=false;mode='battle';view('battleView');drawB();
+}
+const rollIntent=()=>{B.intent=Math.random()<B.heavy?'h':'n'};
+const say=t=>{log.push(t);if(log.length>4)log.shift()};
+function enableBtns(){
+ if(!$('a1'))return;
+ $('a1').disabled=$('a2').disabled=false;$('a3').disabled=!P.pot;$('a4').disabled=!!P.cd;
+}
+function drawB(k='',n=''){
+ const pw=P.sw?` (+${P.sw*2})`:"",col=['#ffffff','#e3edf7','#f2c94c','#6fe3ff'][P.sw];
+ const arc=(c,f)=>`<svg class="fx slash ${f?'s2':''}" viewBox="0 0 100 100"><path d="${f?'M88 80 Q52 10 10 24':'M12 82 Q48 8 92 22'}" stroke="${c}" stroke-width="9" fill="none" stroke-linecap="round" pathLength="1"/></svg>`;
+ const ring=c=>`<i class="fx ring" style="border-color:${c}"></i>`;
+ let pc=P.guard&&k!=='eblock'?' guarded':'',ec='',po='',eo='',pn='',en='',cc='';
+ const num=(c,t)=>`<span class="dmg ${c}">${t}</span>`;
+ if(k==='slash'){pc+=' a-slash';ec=' hitfx';eo=arc(col);en=num('','-'+n)}
+ if(k==='power'){pc+=' a-power';ec=' hitbig';eo=arc(col)+arc(col,1)+ring(col);en=num('big','-'+n);cc=' shk'}
+ if(k==='guard'){pc+=' a-guard';po='<span class="fx shield">🛡️</span>'}
+ if(k==='heal'){pc+=' a-heal';po='<span class="fx sp s1">✚</span><span class="fx sp s2">✚</span><span class="fx sp s3">✚</span>';pn=num('heal','+'+n)}
+ if(k==='eatk'){ec=' e-hop';pc+=' hitfx';po=arc('#ff6b5a');pn=num('','-'+n)}
+ if(k==='eheavy'){ec=' e-slam';pc+=' hitbig';po=arc('#ff6b5a')+ring('#ff6b5a');pn=num('big','-'+n);cc=' shk'}
+ if(k==='eblock'){ec=' e-hop';po='<span class="fx spark">✦</span>';pn=num('blk','Blocked! -'+n)}
+ if(k==='edie')ec=' edie';
+ if(k==='pdie')pc+=' pdie';
+ $('battleView').innerHTML=`<div class="card bt${cc}"><div class="arena">
+  <div class="fighter"><div class="sprite${pc}">${hero(P.sw,P.ar)}${po}</div>${pn}<b>Arlo</b><div class="bar"><i style="width:${P.hp/P.max*100}%"></i></div><div class="muted">${P.hp} / ${P.max} HP</div></div>
+  <div class="fighter"><div class="sprite${ec}">${svg(B)}${eo}</div>${en}<b>${B.name}</b><div class="bar foe"><i style="width:${B.hp/B.max*100}%"></i></div><div class="muted">${B.hp} / ${B.max} HP</div></div></div>
+  <div class="intent">${B.hp>0?(B.intent==='h'?"⚠ It is winding up a big hit. Guard!":"It jiggles menacingly."):""}</div>
+  <div class="actions">
+   <button id="a1" ${busy?'disabled':''}>⚔ Sword slash${pw}</button>
+   <button id="a2" ${busy?'disabled':''}>🛡 Guard</button>
+   <button id="a3" ${busy||!P.pot?'disabled':''}>🌰 Acorn snack (${P.pot})</button>
+   <button id="a4" ${busy||P.cd?'disabled':''}>💥 Power strike${P.cd?` (${P.cd})`:''}</button></div>
+  <div class="log">${log.map(l=>`<div>${l}</div>`).join("")}</div></div>`;
+ ['atk','grd','heal','pow'].forEach((q,i)=>$('a'+(i+1)).onclick=()=>act(q));
+}
+function act(k){
+ if(busy)return;busy=true;let kind,n=0;
+ if(P.cd>0&&k!=='pow')P.cd--;
+ if(k==='atk'){n=R(4,7)+P.sw*2;B.hp-=n;say(`Arlo slashes for ${n} damage.`);kind='slash'}
+ if(k==='grd'){P.guard=true;say("Arlo raises his sword and braces.");kind='guard'}
+ if(k==='heal'){P.pot--;n=Math.min(9,P.max-P.hp);P.hp+=n;say(`Arlo eats an acorn snack and heals ${n}.`);kind='heal'}
+ if(k==='pow'){n=R(9,12)+P.sw*2;B.hp-=n;P.cd=3;say(`POWER STRIKE! ${n} damage.`);kind='power'}
+ if(B.hp<=0){B.hp=0;say(`${B.name} splats into goo!`);drawB(kind,n);return setTimeout(()=>{drawB('edie');setTimeout(win,750)},700)}
+ drawB(kind,n);setTimeout(foeTurn,kind==='power'?1000:800);
+}
+function foeTurn(){
+ const heavy=B.intent==='h';
+ let d=R(B.atk[0],B.atk[1]);if(heavy)d=Math.round(d*1.7);
+ d=Math.max(1,d-P.ar);
+ let kind=heavy?'eheavy':'eatk',m=`${B.name} ${heavy?'body-slams':'bounces into'} Arlo for ${d}.`;
+ if(P.guard){d=Math.max(1,Math.round(d*.35));m=`${B.name} attacks, but Arlo blocks most of it. ${d} damage.`;P.guard=false;kind='eblock'}
+ P.hp=Math.max(0,P.hp-d);say(m);
+ if(P.hp<=0){drawB(kind,d);return setTimeout(()=>{drawB('pdie');setTimeout(lose,800)},750)}
+ rollIntent();drawB(kind,d);
+ setTimeout(()=>{busy=false;enableBtns()},heavy?900:650);
+}
+function win(){
+ const id=F[cur][curKey];delete F[cur][curKey];
+ if(id==='K')return showText({title:"You win!",text:"The Slime King wobbles, hiccups, and spits out the Moon Crumb. It rolls across the throne room floor, glowing brighter than ever.\n\nYou carry it home to Thimble Hollow, and the whole village cheers. Arlo the handyman is now Arlo the Slime Slayer, though he mostly still fixes fences."},()=>{if(!user.guest){const all=users();all[user.id].save=null;LS.set('tq_users',all);window.tqCloud&&window.tqCloud.save(null)}menu()},"Back to menu");
+ const d=DEF[id],c=R(d.c[0],d.c[1]),j=Math.random()<d.j?1:0;
+ P.coins+=c;P.jelly+=j;
+ showText({title:"Slime defeated!",text:`You collect ${c} coins${j?' and 1 slime jelly':''}.${cur===2&&!Object.keys(F[2]).length?"\n\nThe cave falls quiet. Nothing guards the chest at the far end now.":""}`},toMap);
+}
+function lose(){
+ showText({title:"Arlo needs a nap",text:"Everything goes wobbly and green. You wake up in the village with your HP restored. Your coins are safe, and the slimes are still out there."},()=>{P.hp=P.max;P.cd=0;go(0,'P')},"Get back up");
+}
+/* Called by auth-guard.js once Firebase confirms who is logged in */
+window.startTinyQuest=(name,uid,cloudSave)=>{
+ const all=users(),a=all[uid]||{name,save:null};
+ a.name=name;
+ if(cloudSave!==undefined)a.save=cloudSave;   // cloud copy wins (null = none)
+ all[uid]=a;LS.set('tq_users',all);
+ user={name,id:uid,guest:0};menu();
+};

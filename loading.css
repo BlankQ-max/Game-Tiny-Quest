@@ -1,0 +1,427 @@
+/* =========================================
+   TINY QUEST - LOADING SCREEN
+========================================= */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    font-family: "Trebuchet MS", Arial, sans-serif;
+
+    overflow: hidden;
+
+    background: #4aa9df;
+}
+
+
+/* =========================================
+   LOADING SCREEN
+========================================= */
+
+.loading-screen {
+
+    width: 100%;
+    height: 100vh;
+
+    position: relative;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    overflow: hidden;
+
+    /*
+       YOUR UPLOADED BACKGROUND
+    */
+    background-image: url("BackGround.png");
+
+    background-size: cover;
+
+    background-position: center;
+
+    background-repeat: no-repeat;
+}
+
+
+/* =========================================
+   DARK OVERLAY
+   Makes the loading text easier to see
+========================================= */
+
+.loading-screen::before {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.12);
+
+    z-index: 1;
+}
+
+
+/* =========================================
+   GAME TITLE
+========================================= */
+
+.game-title {
+
+    position: relative;
+
+    z-index: 5;
+
+    text-align: center;
+
+    margin-top: -80px;
+
+    padding: 15px 40px;
+
+    background: rgba(68, 35, 22, 0.92);
+
+    border: 5px solid #9b5f2d;
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 7px 0 rgba(45, 24, 15, 0.9);
+}
+
+.game-title h1 {
+
+    font-size: 46px;
+
+    color: #ffd84d;
+
+    text-shadow:
+        3px 3px #663b19;
+
+    letter-spacing: 2px;
+}
+
+.game-title h2 {
+
+    margin-top: 3px;
+
+    font-size: 24px;
+
+    color: #8bea62;
+
+    text-shadow:
+        2px 2px #315e25;
+}
+
+
+/* =========================================
+   CHARACTERS
+========================================= */
+
+.characters {
+
+    position: relative;
+
+    z-index: 4;
+
+    width: 500px;
+
+    height: 130px;
+
+    display: flex;
+
+    align-items: flex-end;
+
+    justify-content: center;
+
+    gap: 30px;
+
+    margin-top: 15px;
+}
+
+
+/* =========================================
+   KAI
+========================================= */
+
+.kai {
+
+    font-size: 80px;
+
+    animation: kaiBounce 1.2s infinite;
+
+    filter:
+        drop-shadow(
+            4px 6px 3px rgba(0, 0, 0, 0.45)
+        );
+}
+
+
+/* =========================================
+   SLIME
+========================================= */
+
+.slime {
+
+    font-size: 60px;
+
+    animation: slimeBounce 1.4s infinite;
+
+    filter:
+        drop-shadow(
+            4px 6px 3px rgba(0, 0, 0, 0.45)
+        );
+}
+
+
+/* =========================================
+   TREE
+========================================= */
+
+.tree {
+
+    display: none;
+}
+
+
+/* =========================================
+   KAI ANIMATION
+========================================= */
+
+@keyframes kaiBounce {
+
+    0% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
+
+/* =========================================
+   SLIME ANIMATION
+========================================= */
+
+@keyframes slimeBounce {
+
+    0% {
+        transform:
+            translateY(0)
+            scaleX(1);
+    }
+
+    50% {
+        transform:
+            translateY(-8px)
+            scaleX(1.08);
+    }
+
+    100% {
+        transform:
+            translateY(0)
+            scaleX(1);
+    }
+}
+
+
+/* =========================================
+   LOADING MESSAGE
+========================================= */
+
+.loading-message {
+
+    position: relative;
+
+    z-index: 5;
+
+    margin-top: 5px;
+
+    padding: 9px 25px;
+
+    background: rgba(54, 31, 20, 0.94);
+
+    border: 3px solid #c17a32;
+
+    border-radius: 10px;
+
+    color: white;
+
+    font-size: 15px;
+
+    font-weight: bold;
+
+    text-shadow:
+        2px 2px #24140e;
+}
+
+
+/* =========================================
+   LOADING BAR CONTAINER
+========================================= */
+
+.loading-container {
+
+    position: relative;
+
+    z-index: 5;
+
+    width: 430px;
+
+    margin-top: 12px;
+
+    text-align: center;
+}
+
+
+/* =========================================
+   LOADING BAR
+========================================= */
+
+.loading-bar {
+
+    width: 100%;
+
+    height: 25px;
+
+    padding: 3px;
+
+    background: #251712;
+
+    border: 3px solid #a86a2e;
+
+    border-radius: 15px;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 3px 8px rgba(0, 0, 0, 0.45);
+}
+
+
+/* =========================================
+   PROGRESS
+========================================= */
+
+.loading-progress {
+
+    width: 0%;
+
+    height: 100%;
+
+    background:
+        linear-gradient(
+            #ffe16a,
+            #e69b26
+        );
+
+    border-radius: 9px;
+
+    transition:
+        width 0.15s linear;
+}
+
+
+/* =========================================
+   PERCENTAGE
+========================================= */
+
+.loading-percent {
+
+    margin-top: 5px;
+
+    color: white;
+
+    font-size: 14px;
+
+    font-weight: bold;
+
+    text-shadow:
+        2px 2px #302016;
+}
+
+
+/* =========================================
+   TIP
+========================================= */
+
+.tip {
+
+    position: relative;
+
+    z-index: 5;
+
+    margin-top: 10px;
+
+    color: white;
+
+    font-size: 13px;
+
+    text-shadow:
+        2px 2px #302016;
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+
+    .game-title {
+
+        margin-top: -40px;
+
+        padding: 12px 25px;
+    }
+
+    .game-title h1 {
+
+        font-size: 34px;
+    }
+
+    .game-title h2 {
+
+        font-size: 19px;
+    }
+
+    .characters {
+
+        width: 90%;
+
+        height: 100px;
+    }
+
+    .kai {
+
+        font-size: 60px;
+    }
+
+    .slime {
+
+        font-size: 45px;
+    }
+
+    .loading-container {
+
+        width: 80%;
+    }
+}

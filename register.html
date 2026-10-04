@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiny Quest - Create Account</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="login-background">
+
+<div class="game-container">
+
+    <div class="login-box">
+        <h1>Create Account</h1>
+        <p>Join the adventure!</p>
+
+        <input
+            type="text"
+            id="newUsername"
+            placeholder="Username"
+        >
+
+        <input
+            type="email"
+            id="email"
+            placeholder="Email Address"
+        >
+
+        <input
+            type="password"
+            id="newPassword"
+            placeholder="Password"
+        >
+
+        <input
+            type="password"
+            id="confirmPassword"
+            placeholder="Confirm Password"
+        >
+
+        <button onclick="createAccount()">
+            Create Account
+        </button>
+
+        <div class="divider">OR</div>
+
+        <p>
+            Already have an account?
+            <a href="index.html">Log In</a>
+        </p>
+
+    </div>
+
+</div>
+
+<script type="module" src="script.js"></script>
+
+</body>
+</html>
