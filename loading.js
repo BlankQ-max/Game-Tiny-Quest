@@ -40,7 +40,9 @@ const tips = [
 
     "Tip: Bump into a slime to start a battle.",
 
-    "Tip: Rest at the house to restore your HP.",
+    "Tip: Rest at a house to heal and save your checkpoint 🚩.",
+
+    "Tip: Look for the glowing exit on the right wall.",
 
     "Tip: Slime jelly buys better swords and armor.",
 
