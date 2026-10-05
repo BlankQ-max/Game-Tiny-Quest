@@ -172,12 +172,13 @@ function showText(o,cb,btn){
  $('textView').innerHTML=`<div class="card">${o.pic||''}<h2 style="${o.big?'font-size:2.4rem':''}">${o.title}</h2>${o.text.split("\n\n").map(t=>`<p>${t}</p>`).join("")}<button class="primary" id="ok">${btn||'Continue'}</button></div>`;
  $('ok').onclick=cb;$('ok').focus();
 }
-const BUILD=11;
+const BUILD=13;
 function fixExits(){   // older saves kept their own copy of each map and are missing newer exits
  G.forEach((g,i)=>{if(MAPS[i].rows[5][12]==='>'&&g[5][12]==='#')g[5][12]='>'});
 }
 function toMap(){fixExits();mode='map';view('mapView');hud();drawMap()}
 function quest(){
+ if(P.won)return "🏆 You saved the Moon Crumb! Explore freely, open chests, and max out your gear.";
  const left=Object.keys(F[2]).length;
  const ka=i=>Object.values(F[i]).some(d=>DEF[d].king);
  if(!ka(4))return "Reach the Moon Spire at the end of the climb and defeat the Last King Slime to win back the Moon Crumb.";
@@ -189,6 +190,7 @@ function quest(){
 function exitOpen(){return !Object.keys(F[cur]).length||!!(P.cl&&P.cl[cur])}
 function exitHint(){
  const ka=Object.values(F[cur]).some(d=>DEF[d].king);
+ if(P.won&&cur===MAPS.length-1)return "The Moon Spire is quiet now. Use the ⬅️ exit on the left wall to revisit earlier levels.";
  if(cur===MAPS.length-1)return "This is the last level! Defeat the Last King Slime at the right end of the middle row.";
  if(cur===2&&!P.key)return "The 🚪 door on the right wall is locked. Open the 🧰 key chest in the top-right corner first (defeat every slime in the caves).";
  if(!exitOpen()){const n=Object.keys(F[cur]).length;return ka?"The ➡️ exit is sealed. Defeat every slime, including the big crowned boss, to open it.":`Clear the room first: ${n} slime${n>1?'s':''} left. Then use the exit on the right wall, middle row.`}
@@ -199,7 +201,7 @@ function hud(){
  const pct=P.hp/P.max*100,low=pct<30,nm=['Village','Forest','Caves','Throne','Peak','Ember','Marsh','Spire'];
  $('hud').innerHTML=`<div class="por">${hero(P.sw,P.ar)}</div>
  <div><div style="font-size:.85rem"><b>Arlo</b> · ${MAPS[cur].n}</div><div class="dbar"><i style="width:${pct}%;${low?'background:#e0463c':''}"></i><span>HP ${P.hp} / ${P.max}</span></div></div>
- <div class="chips"><span>💰 ${P.coins}</span><span>🟢 ${P.jelly}</span><span>🌰 ${P.pot}</span><span>⚔ ${4+P.sw*2}–${7+P.sw*2}</span><span>🛡 −${P.ar}</span><span>🗝️ ${P.key?'Yes':'No'}</span></div>
+ <div class="chips"><span>💰 ${P.coins}</span><span>🟢 ${P.jelly}</span><span>🌰 ${P.pot}</span><span>⚔ ${4+P.sw*2}–${7+P.sw*2}</span><span>🛡 −${P.ar}</span><span>🗝️ ${P.key?'Yes':'No'}</span>${P.won?'<span>🏆</span>':''}</div>
  <div class="quest"><b>Quest:</b> ${quest()}</div>
  <div class="quest" style="border-top:0;padding-top:0"><b>Next level:</b> ${exitHint()}</div>
  <div class="route">${nm.map((n,i)=>`<b class="${i===cur?'on':''}">${n}${i===3&&!P.key?' 🔒':''}</b>`).join(' › ')}</div>`;
@@ -237,10 +239,10 @@ function menu(){
  mode='text';view('textView');
  const sv=user.guest?null:(users()[user.id]||{}).save;
  $('textView').innerHTML=`<div class="card"><div style="text-align:center">${hero(sv?sv.P.sw:0,sv?sv.P.ar:0)}</div><h2>Welcome, ${user.name}</h2>
- ${sv?`<p>Saved game: ${MAPS[sv.cur].n}, ${sv.P.coins} coins, sword level ${sv.P.sw}, armor level ${sv.P.ar}${sv.P.key?', key in hand':''}.</p>`:`<p class="muted">${user.guest?"Guest play does not save your progress.":"No saved game yet."}</p>`}
+ ${sv?`<p>Saved game: ${MAPS[sv.cur].n}, ${sv.P.coins} coins, sword level ${sv.P.sw}, armor level ${sv.P.ar}${sv.P.key?', key in hand':''}.${sv.P.won?' 🏆 Adventure complete!':''}</p>`:`<p class="muted">${user.guest?"Guest play does not save your progress.":"No saved game yet."}</p>`}
  <div class="list">${sv?'<button class="primary" id="m1">Continue</button>':''}<button id="m2" class="${sv?'':'primary'}">New game</button><button id="m3">Log out</button></div></div>`;
  if(sv)$('m1').onclick=()=>newGame(sv);
- $('m2').onclick=()=>title();
+ $('m2').onclick=()=>{if(sv&&!confirm('Starting a new game will replace your saved game'+(sv.P.won?' (including your finished adventure)':'')+'. Start over?'))return;title()};
  $('m3').onclick=()=>window.tqLogout&&window.tqLogout();
  (sv?$('m1'):$('m2')).focus();
 }
@@ -424,10 +426,26 @@ function win(){
  const bonus=bc?` Room bonus: +${bc} coins, +${bj} jelly.`:'';
  if(id==='K')return showText({title:"The Slime King falls!",text:"The Slime King drops his crown, hiccups, and admits he was only guarding the Moon Crumb for someone colder.\n\nWith a crack, the east wall of the throne room splits open. A freezing wind pours in from the Frostbite Peak."},()=>{setMsg("A new exit has opened on the east wall. Boss reward: +"+BR.K[0]+" coins, +"+BR.K[1]+" jelly!"+bonus);toMap()},"Climb the peak");
  if(id==='B')return showText({title:"The Frost Titan falls!",text:"The Frost Titan cracks, hiccups, and mutters that it only froze the Moon Crumb's light to keep it safe from something hungrier.\n\nWith a hiss of steam, the east ice wall melts away. Far beyond the Ember Caverns and the Murk Marsh, a dark moon hangs over the Moon Spire."},()=>{setMsg("The east exit is open. Boss reward: +"+BR.B[0]+" coins, +"+BR.B[1]+" jelly!"+bonus);toMap()},"Keep climbing");
- if(id==='M')return showText({big:1,pic:hero(P.sw,P.ar),title:"🎉 Congratulations!",text:"You defeated the Last King Slime. The forest is at peace.\n\nThe Last King Slime cracks, hiccups, and spits out the Moon Crumb. It rolls across the spire floor, glowing brighter than ever.\n\nYou carry it home to Thimble Hollow, and the whole village cheers. Arlo the handyman is now Arlo the Slime Slayer, though he mostly still fixes fences.\n\nThanks for playing Tiny Quest!"},()=>{if(!user.guest){const all=users();all[user.id].save=null;LS.set('tq_users',all);window.tqCloud&&window.tqCloud.save(null)}menu()},"Back to menu");
+ if(id==='M'){P.won=1;save();return ending()}
  const d=DEF[id],c=Math.round(R(d.c[0],d.c[1])*REWARD*LV(cur)*(1+.25*(P.lk||0))),j=Math.round((Math.random()<Math.min(1,d.j+.3)?R(1,2):0)*(1+.3*cur));
  P.coins+=c;P.jelly+=j;
  showText({title:"Slime defeated!",text:`You collect ${c} coins${j?` and ${j} slime jelly`:''}.${cur===2&&!Object.keys(F[2]).length?"\n\nThe cave falls quiet. Nothing guards the chest at the far end now.":""}${bc?`\n\nRoom clear bonus: +${bc} coins, +${bj} jelly!`:''}${clr&&cur<MAPS.length-1&&cur!==2?"\n\nThe room is clear. The exit is open!":""}`},toMap);
+}
+function ending(){
+ const boss=`<div class="sprite" style="justify-content:center">${svg(DEF.M)}</div>`;
+ const you=hero(P.sw,P.ar);
+ const party='<div style="text-align:center;font-size:1.7rem;letter-spacing:.2em">🎉✨🌙✨🎉</div>';
+ const pages=[
+  {pic:boss,title:"The eclipse breaks",text:"The Last King Slime wobbles, hiccups, and slumps to the floor. The dark moon above the Moon Spire cracks like an egg.\n\nA warm light pours through the crack. The Moon Crumb tumbles out and rolls across the spire floor, glowing brighter than ever."},
+  {pic:you,title:"The Moon Crumb",text:"You pick it up. It is warm, and it smells faintly of toast.\n\nOne by one, the slimes of the spire stop fighting. Fire, mud, and frost slimes bob in a circle around you, almost as if they were saying thank you."},
+  {title:"The long way home",text:"You walk back through the Murk Marsh, the Ember Caverns, and down Frostbite Peak. The ice melts behind you. In the throne room, the Slime King waves, wearing his crown a little crooked.\n\nThe forest has never been so quiet, or so green."},
+  {pic:you,title:"Home at last",text:"In Thimble Hollow, you set the Moon Crumb back above the village. The night sky glows silver, and the whole village cheers.\n\nArlo the handyman is now Arlo the Slime Slayer, though he mostly still fixes fences."},
+  {big:1,pic:party+you,title:"THE END",text:`Congratulations, ${user.name}! You defeated the Last King Slime and saved the Moon Crumb.\n\n💰 ${P.coins} coins · 🟢 ${P.jelly} jelly · ⚔ Sword Lv ${P.sw} · 🛡 Armor Lv ${P.ar} · ❤ ${P.max} max HP\n\nYour progress is saved. Choose Continue on the menu to keep exploring!\n\nThanks for playing Tiny Quest!`}
+ ];
+ const done=()=>{save();menu()};   // progress is kept: Continue resumes in the Moon Spire
+ let i=0;
+ const show=()=>{const last=i===pages.length-1;showText(pages[i],last?done:()=>{i++;show()},last?"Back to menu":"Next ▶")};
+ show();
 }
 function lose(){
  showText({title:"Arlo needs a nap",text:"Everything goes wobbly and green. You wake up at your last checkpoint with your HP restored. Your coins are safe, and the slimes are still out there."},()=>{P.hp=P.max;P.cd=0;respawn()},"Get back up");
