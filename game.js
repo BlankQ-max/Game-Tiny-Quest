@@ -106,12 +106,15 @@ const DEF={
  m:{name:"Mud Slime",color:"#8a6a3a",hp:46,atk:[6,11],heavy:.4,c:[18,24],j:.7},
  i:{name:"Frost Slime",color:"#7fd8ff",hp:32,atk:[5,9],heavy:.35,c:[12,18],j:.6},
  K:{name:"Slime King",color:"#5b6ee1",hp:45,atk:[5,8],heavy:.35,king:1,intro:"rises from the throne, crown wobbling."},
- M:{name:"Eclipse Slime",color:"#3a2f7a",hp:100,atk:[7,11],heavy:.3,king:1,ice:1,cf:"#ffe9a0",cs:"#b8860b",intro:"rises from the shadows, a dark moon floating over its head."},
+ M:{name:"Last King Slime",color:"#3a2f7a",hp:100,atk:[7,11],heavy:.3,king:1,ice:1,cf:"#ffe9a0",cs:"#b8860b",intro:"rises from the shadows, a dark moon floating over its head."},
  B:{name:"Frost Titan",color:"#9ad9ff",hp:75,atk:[6,10],heavy:.3,king:1,ice:1,intro:"bursts out of the ice, crown of icicles clattering."}};
 const CH={'1:10,1':{c:20,j:2},'1:4,7':{c:15,j:3},'2:11,4':{c:35,pot:2},'4:11,1':{c:50,j:3},'4:1,8':{c:40,pot:3},'5:2,8':{c:45,j:3},'5:11,9':{c:60,pot:3},'6:11,1':{c:55,j:3},'6:2,9':{c:50,pot:3},'7:11,1':{c:70,j:4},'7:11,9':{c:70,pot:3},'7:2,9':{c:60,j:3}};
 const SW=[[25,2],[50,4],[90,6],[150,9],[230,12]],AR=[[20,2],[45,4],[80,6],[130,8],[200,11]],HC=[[60,5],[110,8],[180,12]];
 const SH=[[40,3],[90,6]],AH=[[35,3],[80,6]],QS=[[50,4],[100,7]],LK=[[45,4],[100,8]];
 const GUARD=[.35,.25,.15];
+const REWARD=3;                       // coin multiplier for slimes and chests
+const BR={K:[300,10],B:[600,16]};     // boss rewards: [coins, jelly]
+const LV=i=>1+.4*i;                   // rewards grow with each level (Village x1.0 ... Moon Spire x3.8)
 const UP=[
  {id:'sw',l:'⚔ Sword, +2 attack',tb:SW,done:'Your sword gleams.'},
  {id:'ar',l:'🛡 Armor, −1 damage taken',tb:AR,done:'A sturdier fit.'},
@@ -169,7 +172,7 @@ function showText(o,cb,btn){
  $('textView').innerHTML=`<div class="card">${o.pic||''}<h2 style="${o.big?'font-size:2.4rem':''}">${o.title}</h2>${o.text.split("\n\n").map(t=>`<p>${t}</p>`).join("")}<button class="primary" id="ok">${btn||'Continue'}</button></div>`;
  $('ok').onclick=cb;$('ok').focus();
 }
-const BUILD=9;
+const BUILD=11;
 function fixExits(){   // older saves kept their own copy of each map and are missing newer exits
  G.forEach((g,i)=>{if(MAPS[i].rows[5][12]==='>'&&g[5][12]==='#')g[5][12]='>'});
 }
@@ -177,7 +180,7 @@ function toMap(){fixExits();mode='map';view('mapView');hud();drawMap()}
 function quest(){
  const left=Object.keys(F[2]).length;
  const ka=i=>Object.values(F[i]).some(d=>DEF[d].king);
- if(!ka(4))return "Reach the Moon Spire at the end of the climb and defeat the Eclipse Slime to win back the Moon Crumb.";
+ if(!ka(4))return "Reach the Moon Spire at the end of the climb and defeat the Last King Slime to win back the Moon Crumb.";
  if(!ka(3))return cur===4?"Defeat the Frost Titan in the far corner of the peak.":"The Slime King is beaten! Take the cracked east door to Frostbite Peak.";
  if(P.key)return "You have the key! Take it to the locked door at the end of the caves and defeat the Slime King.";
  if(P.sw+P.ar<2)return "Hunt forest slimes for coins and jelly, then upgrade your gear at the village shop.";
@@ -186,7 +189,7 @@ function quest(){
 function exitOpen(){return !Object.keys(F[cur]).length||!!(P.cl&&P.cl[cur])}
 function exitHint(){
  const ka=Object.values(F[cur]).some(d=>DEF[d].king);
- if(cur===MAPS.length-1)return "This is the last level! Defeat the Eclipse Slime at the right end of the middle row.";
+ if(cur===MAPS.length-1)return "This is the last level! Defeat the Last King Slime at the right end of the middle row.";
  if(cur===2&&!P.key)return "The 🚪 door on the right wall is locked. Open the 🧰 key chest in the top-right corner first (defeat every slime in the caves).";
  if(!exitOpen()){const n=Object.keys(F[cur]).length;return ka?"The ➡️ exit is sealed. Defeat every slime, including the big crowned boss, to open it.":`Clear the room first: ${n} slime${n>1?'s':''} left. Then use the exit on the right wall, middle row.`}
  return "Walk to the glowing exit on the right wall, middle row.";
@@ -281,8 +284,9 @@ function chest(x,y,c){
   P.key=1;G[cur][y][x]='.';setMsg("You found the Throne Room key! 🗝️");return hud()||drawMap();
  }
  const r=CH[cur+':'+x+','+y]||{c:10};
- P.coins+=r.c||0;P.jelly+=r.j||0;P.pot+=r.pot||0;G[cur][y][x]='.';
- setMsg(`Chest opened: +${r.c||0} coins${r.j?`, +${r.j} jelly`:''}${r.pot?`, +${r.pot} acorn snacks`:''}.`);
+ const rc=Math.round((r.c||0)*REWARD*LV(cur)),rj=Math.round((r.j||0)*2*(1+.3*cur));
+ P.coins+=rc;P.jelly+=rj;P.pot+=r.pot||0;G[cur][y][x]='.';
+ setMsg(`Chest opened: +${rc} coins${rj?`, +${rj} jelly`:''}${r.pot?`, +${r.pot} acorn snacks`:''}.`);
  hud();drawMap();
 }
 const KM={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]},held=[];
@@ -414,12 +418,16 @@ function foeTurn(){
 function win(){
  const id=F[cur][curKey];delete F[cur][curKey];
  const clr=!Object.keys(F[cur]).length;if(clr){P.cl=P.cl||{};P.cl[cur]=1}
- if(id==='K')return showText({title:"The Slime King falls!",text:"The Slime King drops his crown, hiccups, and admits he was only guarding the Moon Crumb for someone colder.\n\nWith a crack, the east wall of the throne room splits open. A freezing wind pours in from the Frostbite Peak."},()=>{setMsg("A new exit has opened on the east wall.");toMap()},"Climb the peak");
- if(id==='B')return showText({title:"The Frost Titan falls!",text:"The Frost Titan cracks, hiccups, and mutters that it only froze the Moon Crumb's light to keep it safe from something hungrier.\n\nWith a hiss of steam, the east ice wall melts away. Far beyond the Ember Caverns and the Murk Marsh, a dark moon hangs over the Moon Spire."},()=>{setMsg("The east exit is open.");toMap()},"Keep climbing");
- if(id==='M')return showText({title:"You win!",text:"The Eclipse Slime cracks, hiccups, and spits out the Moon Crumb. It rolls across the spire floor, glowing brighter than ever.\n\nYou carry it home to Thimble Hollow, and the whole village cheers. Arlo the handyman is now Arlo the Slime Slayer, though he mostly still fixes fences."},()=>{if(!user.guest){const all=users();all[user.id].save=null;LS.set('tq_users',all);window.tqCloud&&window.tqCloud.save(null)}menu()},"Back to menu");
- const d=DEF[id],c=Math.round(R(d.c[0],d.c[1])*(1+.25*(P.lk||0))),j=Math.random()<d.j?1:0;
+ const br=BR[id];if(br){P.coins+=br[0];P.jelly+=br[1]}
+ const bc=clr&&cur>0?Math.round(30*LV(cur)):0,bj=clr&&cur>0?1+Math.floor(cur/2):0;   // room-clear bonus
+ P.coins+=bc;P.jelly+=bj;
+ const bonus=bc?` Room bonus: +${bc} coins, +${bj} jelly.`:'';
+ if(id==='K')return showText({title:"The Slime King falls!",text:"The Slime King drops his crown, hiccups, and admits he was only guarding the Moon Crumb for someone colder.\n\nWith a crack, the east wall of the throne room splits open. A freezing wind pours in from the Frostbite Peak."},()=>{setMsg("A new exit has opened on the east wall. Boss reward: +"+BR.K[0]+" coins, +"+BR.K[1]+" jelly!"+bonus);toMap()},"Climb the peak");
+ if(id==='B')return showText({title:"The Frost Titan falls!",text:"The Frost Titan cracks, hiccups, and mutters that it only froze the Moon Crumb's light to keep it safe from something hungrier.\n\nWith a hiss of steam, the east ice wall melts away. Far beyond the Ember Caverns and the Murk Marsh, a dark moon hangs over the Moon Spire."},()=>{setMsg("The east exit is open. Boss reward: +"+BR.B[0]+" coins, +"+BR.B[1]+" jelly!"+bonus);toMap()},"Keep climbing");
+ if(id==='M')return showText({big:1,pic:hero(P.sw,P.ar),title:"🎉 Congratulations!",text:"You defeated the Last King Slime. The forest is at peace.\n\nThe Last King Slime cracks, hiccups, and spits out the Moon Crumb. It rolls across the spire floor, glowing brighter than ever.\n\nYou carry it home to Thimble Hollow, and the whole village cheers. Arlo the handyman is now Arlo the Slime Slayer, though he mostly still fixes fences.\n\nThanks for playing Tiny Quest!"},()=>{if(!user.guest){const all=users();all[user.id].save=null;LS.set('tq_users',all);window.tqCloud&&window.tqCloud.save(null)}menu()},"Back to menu");
+ const d=DEF[id],c=Math.round(R(d.c[0],d.c[1])*REWARD*LV(cur)*(1+.25*(P.lk||0))),j=Math.round((Math.random()<Math.min(1,d.j+.3)?R(1,2):0)*(1+.3*cur));
  P.coins+=c;P.jelly+=j;
- showText({title:"Slime defeated!",text:`You collect ${c} coins${j?' and 1 slime jelly':''}.${cur===2&&!Object.keys(F[2]).length?"\n\nThe cave falls quiet. Nothing guards the chest at the far end now.":""}${clr&&cur<MAPS.length-1&&cur!==2?"\n\nThe room is clear. The exit is open!":""}`},toMap);
+ showText({title:"Slime defeated!",text:`You collect ${c} coins${j?` and ${j} slime jelly`:''}.${cur===2&&!Object.keys(F[2]).length?"\n\nThe cave falls quiet. Nothing guards the chest at the far end now.":""}${bc?`\n\nRoom clear bonus: +${bc} coins, +${bj} jelly!`:''}${clr&&cur<MAPS.length-1&&cur!==2?"\n\nThe room is clear. The exit is open!":""}`},toMap);
 }
 function lose(){
  showText({title:"Arlo needs a nap",text:"Everything goes wobbly and green. You wake up at your last checkpoint with your HP restored. Your coins are safe, and the slimes are still out there."},()=>{P.hp=P.max;P.cd=0;respawn()},"Get back up");
