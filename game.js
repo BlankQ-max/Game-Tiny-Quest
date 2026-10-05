@@ -169,7 +169,11 @@ function showText(o,cb,btn){
  $('textView').innerHTML=`<div class="card">${o.pic||''}<h2 style="${o.big?'font-size:2.4rem':''}">${o.title}</h2>${o.text.split("\n\n").map(t=>`<p>${t}</p>`).join("")}<button class="primary" id="ok">${btn||'Continue'}</button></div>`;
  $('ok').onclick=cb;$('ok').focus();
 }
-function toMap(){mode='map';view('mapView');hud();drawMap()}
+const BUILD=8;
+function fixExits(){   // older saves kept their own copy of each map and are missing newer exits
+ G.forEach((g,i)=>{if(MAPS[i].rows[5][12]==='>'&&g[5][12]==='#')g[5][12]='>'});
+}
+function toMap(){fixExits();mode='map';view('mapView');hud();drawMap()}
 function quest(){
  const left=Object.keys(F[2]).length;
  const ka=i=>Object.values(F[i]).some(d=>DEF[d].king);
@@ -208,7 +212,7 @@ function newGame(sv){
  P={hp:30,max:30,hc:0,sh:0,ah:0,qs:0,lk:0,pot:2,coins:10,jelly:0,sw:0,ar:0,key:0,cd:0,guard:false,opened:{}};
  if(!sv)return go(0,'P');
  P={...P,...sv.P,guard:false};G=G.map((g,i)=>sv.G[i]?sv.G[i].map(r=>r.split('')):g);F=F.map((f,i)=>sv.F[i]||f);
- G.forEach((g,i)=>{if(MAPS[i].rows[5][12]==='>'&&g[5][12]==='#')g[5][12]='>'});   // add exits that older saves are missing
+ fixExits();
  cur=sv.cur;pl={...sv.pl};vis={...pl};
  setMsg('Welcome back, '+user.name+'.');toMap();
 }
@@ -423,5 +427,6 @@ window.startTinyQuest=(name,uid,cloudSave)=>{
  if(cloudSave!==undefined)a.save=cloudSave;   // cloud copy wins (null = none)
  all[uid]=a;LS.set('tq_users',all);
  const boot=$('boot');if(boot)boot.remove();
+ const note=document.querySelector('#mapView .muted');if(note&&!note.dataset.b){note.dataset.b=1;note.textContent+=' (build '+BUILD+')'}
  user={name,id:uid,guest:0};menu();
 };
