@@ -51,30 +51,69 @@ const MAPS=[
 "#...........#",
 "#...........#",
 "#############"]},
-{n:"Frostbite Peak",c:['#d6ecf8','#cbe4f3'],w:'🧊',respawn:1,rows:[
+{n:"Frostbite Peak",c:['#d6ecf8','#cbe4f3'],w:'🧊',respawn:1,lock:"A wall of ice seals the east exit while the Frost Titan still stands.",rows:[
 "#############",
 "#.H..#...i.C#",
 "#....#..#...#",
 "#.S......#..#",
 "#...i....#.i#",
-"<P..........#",
+"<P.........Q>",
 "#..##...##..#",
 "#..#..i...#.#",
 "#C....##....#",
 "#.i........B#",
+"#############"]},
+{n:"Ember Caverns",c:['#8a4b2d','#7f4328'],w:'🌋',wc:'#e8602c',respawn:1,rows:[
+"#############",
+"#.H...~~..f.#",
+"#.....~~....#",
+"#.S.f.......#",
+"#...##..f.#.#",
+"<P.........Q>",
+"#.f.#...##..#",
+"#...#.~~..f.#",
+"#.C...~~....#",
+"#.....f....C#",
+"#############"]},
+{n:"Murk Marsh",c:['#5f7a45','#587340'],w:'🪵',wc:'#3f6a4f',respawn:1,rows:[
+"#############",
+"#...~~.....C#",
+"#.m.~~..m...#",
+"#...#....~~.#",
+"#.S.#.m..~~.#",
+"<P.........Q>",
+"#..~~..#.m..#",
+"#H.~~..#....#",
+"#....m...~~.#",
+"#.C..~~...m.#",
+"#############"]},
+{n:"Moon Spire",c:['#2b2f5a','#262a52'],w:'🌑',respawn:1,rows:[
+"#############",
+"#H.S...#...C#",
+"#...f..#.i..#",
+"#......#....#",
+"#.m..f.#..m.#",
+"<P.........M#",
+"#......#....#",
+"#.m....#.i..#",
+"#......#....#",
+"#.C....#...C#",
 "#############"]}];
 const DEF={
  g:{name:"Green Slime",color:"#5cc95c",hp:16,atk:[2,4],heavy:.2,c:[3,6],j:.5},
  r:{name:"Red Slime",color:"#e0463c",hp:22,atk:[3,6],heavy:.35,c:[6,10],j:.8},
+ f:{name:"Fire Slime",color:"#ff8a3d",hp:40,atk:[6,10],heavy:.35,c:[16,22],j:.6},
+ m:{name:"Mud Slime",color:"#8a6a3a",hp:46,atk:[6,11],heavy:.4,c:[18,24],j:.7},
  i:{name:"Frost Slime",color:"#7fd8ff",hp:32,atk:[5,9],heavy:.35,c:[12,18],j:.6},
  K:{name:"Slime King",color:"#5b6ee1",hp:45,atk:[5,8],heavy:.35,king:1,intro:"rises from the throne, crown wobbling."},
+ M:{name:"Eclipse Slime",color:"#3a2f7a",hp:100,atk:[7,11],heavy:.3,king:1,ice:1,cf:"#ffe9a0",cs:"#b8860b",intro:"rises from the shadows, a dark moon floating over its head."},
  B:{name:"Frost Titan",color:"#9ad9ff",hp:75,atk:[6,10],heavy:.3,king:1,ice:1,intro:"bursts out of the ice, crown of icicles clattering."}};
-const CH={'1:10,1':{c:20,j:2},'1:4,7':{c:15,j:3},'2:11,4':{c:35,pot:2},'4:11,1':{c:50,j:3},'4:1,8':{c:40,pot:3}};
-const SW=[[25,2],[50,4],[90,6]],AR=[[20,2],[45,4],[80,6]];
+const CH={'1:10,1':{c:20,j:2},'1:4,7':{c:15,j:3},'2:11,4':{c:35,pot:2},'4:11,1':{c:50,j:3},'4:1,8':{c:40,pot:3},'5:2,8':{c:45,j:3},'5:11,9':{c:60,pot:3},'6:11,1':{c:55,j:3},'6:2,9':{c:50,pot:3},'7:11,1':{c:70,j:4},'7:11,9':{c:70,pot:3},'7:2,9':{c:60,j:3}};
+const SW=[[25,2],[50,4],[90,6]],AR=[[20,2],[45,4],[80,6]],HC=[[60,5],[110,8]];
 
 function svg(d){
  const c=d.color;
- return `<svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg"><path d="M8 72 Q4 28 50 20 Q96 28 92 72 Z" fill="${c}" stroke="#0004" stroke-width="3"/><ellipse cx="34" cy="38" rx="9" ry="5" fill="#fff5" transform="rotate(-25 34 38)"/><circle cx="37" cy="50" r="8" fill="#fff"/><circle cx="63" cy="50" r="8" fill="#fff"/><circle cx="39" cy="51" r="3.5" fill="#222"/><circle cx="65" cy="51" r="3.5" fill="#222"/><path d="M40 63 Q50 70 60 63" stroke="#222" stroke-width="3" fill="none" stroke-linecap="round"/>${d.ice?'<path d="M26 28 L30 8 L38 22 L44 0 L50 20 L56 0 L62 22 L70 8 L74 28 Z" fill="#e8fbff" stroke="#4aa8d8" stroke-width="2.5"/>':d.king?'<path d="M30 26 L34 6 L43 18 L50 2 L57 18 L66 6 L70 26 Z" fill="#f6c343" stroke="#a27a0c" stroke-width="2.5"/>':''}</svg>`}
+ return `<svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg"><path d="M8 72 Q4 28 50 20 Q96 28 92 72 Z" fill="${c}" stroke="#0004" stroke-width="3"/><ellipse cx="34" cy="38" rx="9" ry="5" fill="#fff5" transform="rotate(-25 34 38)"/><circle cx="37" cy="50" r="8" fill="#fff"/><circle cx="63" cy="50" r="8" fill="#fff"/><circle cx="39" cy="51" r="3.5" fill="#222"/><circle cx="65" cy="51" r="3.5" fill="#222"/><path d="M40 63 Q50 70 60 63" stroke="#222" stroke-width="3" fill="none" stroke-linecap="round"/>${d.ice?'<path d="M26 28 L30 8 L38 22 L44 0 L50 20 L56 0 L62 22 L70 8 L74 28 Z" fill="'+(d.cf||'#e8fbff')+'" stroke="'+(d.cs||'#4aa8d8')+'" stroke-width="2.5"/>':d.king?'<path d="M30 26 L34 6 L43 18 L50 2 L57 18 L66 6 L70 26 Z" fill="#f6c343" stroke="#a27a0c" stroke-width="2.5"/>':''}</svg>`}
 const IMG={};
 for(const k in DEF){const i=new Image();i.onload=()=>mode==='map'&&drawMap();i.src='data:image/svg+xml,'+encodeURIComponent(svg(DEF[k]));IMG[k]=i}
 
@@ -123,14 +162,16 @@ function showText(o,cb,btn){
 function toMap(){mode='map';view('mapView');hud();drawMap()}
 function quest(){
  const left=Object.keys(F[2]).length;
- if(!Object.keys(F[3]).length)return cur===4?"Defeat the Frost Titan in the far corner of the peak and take back the Moon Crumb.":"The Slime King is beaten! Take the cracked east door to Frostbite Peak.";
+ const ka=i=>Object.values(F[i]).some(d=>DEF[d].king);
+ if(!ka(4))return "Reach the Moon Spire at the end of the climb and defeat the Eclipse Slime to win back the Moon Crumb.";
+ if(!ka(3))return cur===4?"Defeat the Frost Titan in the far corner of the peak.":"The Slime King is beaten! Take the cracked east door to Frostbite Peak.";
  if(P.key)return "You have the key! Take it to the locked door at the end of the caves and defeat the Slime King.";
  if(P.sw+P.ar<2)return "Hunt forest slimes for coins and jelly, then upgrade your gear at the village shop.";
  return left?`Clear the Slime Caves (${left} slime${left>1?'s':''} left), then open the key chest.`:"Open the key chest at the far end of the caves.";
 }
 function hud(){
  save();
- const pct=P.hp/P.max*100,low=pct<30,nm=['Village','Forest','Caves','Throne','Peak'];
+ const pct=P.hp/P.max*100,low=pct<30,nm=['Village','Forest','Caves','Throne','Peak','Ember','Marsh','Spire'];
  $('hud').innerHTML=`<div class="por">${hero(P.sw,P.ar)}</div>
  <div><div style="font-size:.85rem"><b>Arlo</b> · ${MAPS[cur].n}</div><div class="dbar"><i style="width:${pct}%;${low?'background:#e0463c':''}"></i><span>HP ${P.hp} / ${P.max}</span></div></div>
  <div class="chips"><span>💰 ${P.coins}</span><span>🟢 ${P.jelly}</span><span>🌰 ${P.pot}</span><span>⚔ ${4+P.sw*2}–${7+P.sw*2}</span><span>🛡 −${P.ar}</span><span>🗝️ ${P.key?'Yes':'No'}</span></div>
@@ -146,7 +187,7 @@ function newGame(sv){
    if(c==='P'||c==='Q'){sp[c]={x,y};row[x]='.'}
    if(DEF[c]){f[key(x,y)]=c;row[x]='.'}}));
   G.push(g);INIT.push(f);F.push({...f});SP.push(sp)});
- P={hp:30,max:30,pot:2,coins:10,jelly:0,sw:0,ar:0,key:0,cd:0,guard:false,opened:{}};
+ P={hp:30,max:30,hc:0,pot:2,coins:10,jelly:0,sw:0,ar:0,key:0,cd:0,guard:false,opened:{}};
  if(!sv)return go(0,'P');
  P={...P,...sv.P,guard:false};G=G.map((g,i)=>sv.G[i]?sv.G[i].map(r=>r.split('')):g);F=F.map((f,i)=>sv.F[i]||f);
  if(G[3][5][12]==='#')G[3][5][12]='>';
@@ -198,7 +239,7 @@ function move(dx,dy){
  if(c==='H'){P.hp=P.max;P.cd=0;setMsg("You rest at the house. HP fully restored.");return hud()}
  if(c==='S')return shop();
  if(c==='C'||c==='k')return chest(nx,ny,c);
- if(c==='>'){const L=MAPS[cur].lock;if(L&&Object.keys(F[cur]).length)return setMsg(L);return go(cur+1,'P')}
+ if(c==='>'){const L=MAPS[cur].lock;if(L&&Object.values(F[cur]).some(id=>DEF[id].king))return setMsg(L);return go(cur+1,'P')}
  if(c==='<')return go(cur-1,'Q');
  if(c==='D'){if(P.key)return go(cur+1,'P');return setMsg("The throne door is locked. Find the key in this cave.")}
  pl={x:nx,y:ny};setMsg("");drawMap();
@@ -229,16 +270,18 @@ document.querySelectorAll('#pad button').forEach(b=>{
 function shop(msg){
  save();
  mode='text';view('textView');
- const s=SW[P.sw],a=AR[P.ar];
+ const s=SW[P.sw],a=AR[P.ar],h=HC[P.hc||0];
  const b=(id,l,ok)=>`<button id="${id}" ${ok?'':'disabled'}>${l}</button>`;
  $('textView').innerHTML=`<div class="card"><h2>Village Shop</h2><p class="muted">💰 ${P.coins} coins · 🟢 ${P.jelly} jelly</p><p>${msg||"Slime jelly makes excellent gear. Bring me some!"}</p><div class="list">
  ${b('b1',`🌰 Acorn snack, heals 9 (you have ${P.pot}) — 8 coins`,P.coins>=8&&P.pot<9)}
  ${b('b2',s?`⚔ Sword upgrade, +2 attack — ${s[0]} coins, ${s[1]} jelly`:'⚔ Sword fully upgraded',s&&P.coins>=s[0]&&P.jelly>=s[1])}
  ${b('b3',a?`🛡 Armor upgrade, -1 damage taken — ${a[0]} coins, ${a[1]} jelly`:'🛡 Armor fully upgraded',a&&P.coins>=a[0]&&P.jelly>=a[1])}
+ ${b('b5',h?`❤ Heart charm, +10 max HP — ${h[0]} coins, ${h[1]} jelly`:'❤ Heart charms maxed',h&&P.coins>=h[0]&&P.jelly>=h[1])}
  <button class="primary" id="b4">Leave shop</button></div></div>`;
  $('b1').onclick=()=>{P.coins-=8;P.pot++;shop("One acorn snack, fresh.")};
  $('b2').onclick=()=>{P.coins-=s[0];P.jelly-=s[1];P.sw++;shop("Your sword gleams.")};
  $('b3').onclick=()=>{P.coins-=a[0];P.jelly-=a[1];P.ar++;shop("A sturdier fit.")};
+ $('b5').onclick=()=>{P.coins-=h[0];P.jelly-=h[1];P.hc=(P.hc||0)+1;P.max+=10;P.hp+=10;shop("You feel sturdier.")};
  $('b4').onclick=toMap;
 }
 
@@ -247,7 +290,7 @@ function drawMap(){
  ctx.textAlign='center';ctx.textBaseline='middle';
  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
   const c=G[cur][y][x];
-  ctx.fillStyle=c==='~'?'#4a90c8':m.c[(x+y)%2];
+  ctx.fillStyle=c==='~'?(m.wc||'#4a90c8'):m.c[(x+y)%2];
   ctx.fillRect(x*T,y*T,T,T);
   ctx.font='30px serif';
   const e={'#':m.w,'H':'🏠','S':'🏪','C':'🎁','k':'🧰','>':'➡️','<':'⬅️','D':'🚪'}[c];
@@ -339,7 +382,8 @@ function foeTurn(){
 function win(){
  const id=F[cur][curKey];delete F[cur][curKey];
  if(id==='K')return showText({title:"The Slime King falls!",text:"The Slime King drops his crown, hiccups, and admits he was only guarding the Moon Crumb for someone colder.\n\nWith a crack, the east wall of the throne room splits open. A freezing wind pours in from the Frostbite Peak."},()=>{setMsg("A new exit has opened on the east wall.");toMap()},"Climb the peak");
- if(id==='B')return showText({title:"You win!",text:"The Frost Titan cracks, hiccups, and spits out the Moon Crumb. It rolls across the ice, glowing brighter than ever.\n\nYou carry it home to Thimble Hollow, and the whole village cheers. Arlo the handyman is now Arlo the Slime Slayer, though he mostly still fixes fences."},()=>{if(!user.guest){const all=users();all[user.id].save=null;LS.set('tq_users',all);window.tqCloud&&window.tqCloud.save(null)}menu()},"Back to menu");
+ if(id==='B')return showText({title:"The Frost Titan falls!",text:"The Frost Titan cracks, hiccups, and mutters that it only froze the Moon Crumb's light to keep it safe from something hungrier.\n\nWith a hiss of steam, the east ice wall melts away. Far beyond the Ember Caverns and the Murk Marsh, a dark moon hangs over the Moon Spire."},()=>{setMsg("The east exit is open.");toMap()},"Keep climbing");
+ if(id==='M')return showText({title:"You win!",text:"The Eclipse Slime cracks, hiccups, and spits out the Moon Crumb. It rolls across the spire floor, glowing brighter than ever.\n\nYou carry it home to Thimble Hollow, and the whole village cheers. Arlo the handyman is now Arlo the Slime Slayer, though he mostly still fixes fences."},()=>{if(!user.guest){const all=users();all[user.id].save=null;LS.set('tq_users',all);window.tqCloud&&window.tqCloud.save(null)}menu()},"Back to menu");
  const d=DEF[id],c=R(d.c[0],d.c[1]),j=Math.random()<d.j?1:0;
  P.coins+=c;P.jelly+=j;
  showText({title:"Slime defeated!",text:`You collect ${c} coins${j?' and 1 slime jelly':''}.${cur===2&&!Object.keys(F[2]).length?"\n\nThe cave falls quiet. Nothing guards the chest at the far end now.":""}`},toMap);
