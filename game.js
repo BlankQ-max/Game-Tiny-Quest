@@ -169,7 +169,7 @@ function showText(o,cb,btn){
  $('textView').innerHTML=`<div class="card">${o.pic||''}<h2 style="${o.big?'font-size:2.4rem':''}">${o.title}</h2>${o.text.split("\n\n").map(t=>`<p>${t}</p>`).join("")}<button class="primary" id="ok">${btn||'Continue'}</button></div>`;
  $('ok').onclick=cb;$('ok').focus();
 }
-const BUILD=8;
+const BUILD=9;
 function fixExits(){   // older saves kept their own copy of each map and are missing newer exits
  G.forEach((g,i)=>{if(MAPS[i].rows[5][12]==='>'&&g[5][12]==='#')g[5][12]='>'});
 }
@@ -183,11 +183,12 @@ function quest(){
  if(P.sw+P.ar<2)return "Hunt forest slimes for coins and jelly, then upgrade your gear at the village shop.";
  return left?`Clear the Slime Caves (${left} slime${left>1?'s':''} left), then open the key chest.`:"Open the key chest at the far end of the caves.";
 }
+function exitOpen(){return !Object.keys(F[cur]).length||!!(P.cl&&P.cl[cur])}
 function exitHint(){
  const ka=Object.values(F[cur]).some(d=>DEF[d].king);
  if(cur===MAPS.length-1)return "This is the last level! Defeat the Eclipse Slime at the right end of the middle row.";
  if(cur===2&&!P.key)return "The 🚪 door on the right wall is locked. Open the 🧰 key chest in the top-right corner first (defeat every slime in the caves).";
- if(MAPS[cur].lock&&ka)return "The ➡️ exit is sealed. Defeat the big crowned boss slime on this map to open it.";
+ if(!exitOpen()){const n=Object.keys(F[cur]).length;return ka?"The ➡️ exit is sealed. Defeat every slime, including the big crowned boss, to open it.":`Clear the room first: ${n} slime${n>1?'s':''} left. Then use the exit on the right wall, middle row.`}
  return "Walk to the glowing exit on the right wall, middle row.";
 }
 function hud(){
@@ -209,9 +210,11 @@ function newGame(sv){
    if(c==='P'||c==='Q'){sp[c]={x,y};row[x]='.'}
    if(DEF[c]){f[key(x,y)]=c;row[x]='.'}}));
   G.push(g);INIT.push(f);F.push({...f});SP.push(sp)});
- P={hp:30,max:30,hc:0,sh:0,ah:0,qs:0,lk:0,pot:2,coins:10,jelly:0,sw:0,ar:0,key:0,cd:0,guard:false,opened:{}};
+ P={hp:30,max:30,hc:0,sh:0,ah:0,qs:0,lk:0,pot:2,coins:10,jelly:0,sw:0,ar:0,key:0,cd:0,guard:false,opened:{},cl:{}};
  if(!sv)return go(0,'P');
- P={...P,...sv.P,guard:false};G=G.map((g,i)=>sv.G[i]?sv.G[i].map(r=>r.split('')):g);F=F.map((f,i)=>sv.F[i]||f);
+ P={...P,...sv.P,guard:false};
+ if(!sv.P.cl){P.cl={};for(let i=0;i<sv.cur;i++)P.cl[i]=1}   // old saves: rooms you already left count as cleared
+G=G.map((g,i)=>sv.G[i]?sv.G[i].map(r=>r.split('')):g);F=F.map((f,i)=>sv.F[i]||f);
  fixExits();
  cur=sv.cur;pl={...sv.pl};vis={...pl};
  setMsg('Welcome back, '+user.name+'.');toMap();
@@ -267,7 +270,7 @@ function move(dx,dy){
  if(c==='H'){P.hp=P.max;P.cd=0;P.ck={map:cur,x:pl.x,y:pl.y,hx:nx,hy:ny};setMsg("You rest at the house. HP restored. 🚩 Checkpoint saved!");return hud()}
  if(c==='S')return shop();
  if(c==='C'||c==='k')return chest(nx,ny,c);
- if(c==='>'){const L=MAPS[cur].lock;if(L&&Object.values(F[cur]).some(id=>DEF[id].king))return setMsg(L);return go(cur+1,'P')}
+ if(c==='>'){const n=Object.keys(F[cur]).length;if(!exitOpen())return setMsg(`Clear the room first! ${n} slime${n>1?'s':''} left.`);return go(cur+1,'P')}
  if(c==='<')return go(cur-1,'Q');
  if(c==='D'){if(P.key)return go(cur+1,'P');return setMsg("The throne door is locked. Find the key in this cave.")}
  pl={x:nx,y:ny};setMsg("");drawMap();
@@ -320,7 +323,7 @@ function drawMap(){
   const e={'#':m.w,'H':'🏠','S':'🏪','C':'🎁','k':'🧰','>':'➡️','<':'⬅️','D':'🚪'}[c];
   if(e)ctx.fillText(e,x*T+T/2,y*T+T/2+2);
   if(c==='>'||c==='D'){
-   const op=c==='D'?P.key:!(m.lock&&Object.values(F[cur]).some(d=>DEF[d].king));
+   const op=c==='D'?P.key:exitOpen();
    if(op){ctx.save();ctx.globalAlpha=.5+.35*Math.sin(performance.now()/260);ctx.strokeStyle='#ffd23f';ctx.lineWidth=3;ctx.strokeRect(x*T+2,y*T+2,T-4,T-4);ctx.restore()}
   }
   if(c==='H'&&P.ck&&P.ck.map===cur&&P.ck.hx===x&&P.ck.hy===y){ctx.font='16px serif';ctx.fillText('🚩',x*T+T-9,y*T+9)}
@@ -410,12 +413,13 @@ function foeTurn(){
 }
 function win(){
  const id=F[cur][curKey];delete F[cur][curKey];
+ const clr=!Object.keys(F[cur]).length;if(clr){P.cl=P.cl||{};P.cl[cur]=1}
  if(id==='K')return showText({title:"The Slime King falls!",text:"The Slime King drops his crown, hiccups, and admits he was only guarding the Moon Crumb for someone colder.\n\nWith a crack, the east wall of the throne room splits open. A freezing wind pours in from the Frostbite Peak."},()=>{setMsg("A new exit has opened on the east wall.");toMap()},"Climb the peak");
  if(id==='B')return showText({title:"The Frost Titan falls!",text:"The Frost Titan cracks, hiccups, and mutters that it only froze the Moon Crumb's light to keep it safe from something hungrier.\n\nWith a hiss of steam, the east ice wall melts away. Far beyond the Ember Caverns and the Murk Marsh, a dark moon hangs over the Moon Spire."},()=>{setMsg("The east exit is open.");toMap()},"Keep climbing");
  if(id==='M')return showText({title:"You win!",text:"The Eclipse Slime cracks, hiccups, and spits out the Moon Crumb. It rolls across the spire floor, glowing brighter than ever.\n\nYou carry it home to Thimble Hollow, and the whole village cheers. Arlo the handyman is now Arlo the Slime Slayer, though he mostly still fixes fences."},()=>{if(!user.guest){const all=users();all[user.id].save=null;LS.set('tq_users',all);window.tqCloud&&window.tqCloud.save(null)}menu()},"Back to menu");
  const d=DEF[id],c=Math.round(R(d.c[0],d.c[1])*(1+.25*(P.lk||0))),j=Math.random()<d.j?1:0;
  P.coins+=c;P.jelly+=j;
- showText({title:"Slime defeated!",text:`You collect ${c} coins${j?' and 1 slime jelly':''}.${cur===2&&!Object.keys(F[2]).length?"\n\nThe cave falls quiet. Nothing guards the chest at the far end now.":""}`},toMap);
+ showText({title:"Slime defeated!",text:`You collect ${c} coins${j?' and 1 slime jelly':''}.${cur===2&&!Object.keys(F[2]).length?"\n\nThe cave falls quiet. Nothing guards the chest at the far end now.":""}${clr&&cur<MAPS.length-1&&cur!==2?"\n\nThe room is clear. The exit is open!":""}`},toMap);
 }
 function lose(){
  showText({title:"Arlo needs a nap",text:"Everything goes wobbly and green. You wake up at your last checkpoint with your HP restored. Your coins are safe, and the slimes are still out there."},()=>{P.hp=P.max;P.cd=0;respawn()},"Get back up");
