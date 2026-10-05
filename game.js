@@ -208,7 +208,7 @@ function newGame(sv){
  P={hp:30,max:30,hc:0,sh:0,ah:0,qs:0,lk:0,pot:2,coins:10,jelly:0,sw:0,ar:0,key:0,cd:0,guard:false,opened:{}};
  if(!sv)return go(0,'P');
  P={...P,...sv.P,guard:false};G=G.map((g,i)=>sv.G[i]?sv.G[i].map(r=>r.split('')):g);F=F.map((f,i)=>sv.F[i]||f);
- if(G[3][5][12]==='#')G[3][5][12]='>';
+ G.forEach((g,i)=>{if(MAPS[i].rows[5][12]==='>'&&g[5][12]==='#')g[5][12]='>'});   // add exits that older saves are missing
  cur=sv.cur;pl={...sv.pl};vis={...pl};
  setMsg('Welcome back, '+user.name+'.');toMap();
 }
