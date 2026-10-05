@@ -109,7 +109,17 @@ const DEF={
  M:{name:"Eclipse Slime",color:"#3a2f7a",hp:100,atk:[7,11],heavy:.3,king:1,ice:1,cf:"#ffe9a0",cs:"#b8860b",intro:"rises from the shadows, a dark moon floating over its head."},
  B:{name:"Frost Titan",color:"#9ad9ff",hp:75,atk:[6,10],heavy:.3,king:1,ice:1,intro:"bursts out of the ice, crown of icicles clattering."}};
 const CH={'1:10,1':{c:20,j:2},'1:4,7':{c:15,j:3},'2:11,4':{c:35,pot:2},'4:11,1':{c:50,j:3},'4:1,8':{c:40,pot:3},'5:2,8':{c:45,j:3},'5:11,9':{c:60,pot:3},'6:11,1':{c:55,j:3},'6:2,9':{c:50,pot:3},'7:11,1':{c:70,j:4},'7:11,9':{c:70,pot:3},'7:2,9':{c:60,j:3}};
-const SW=[[25,2],[50,4],[90,6]],AR=[[20,2],[45,4],[80,6]],HC=[[60,5],[110,8]];
+const SW=[[25,2],[50,4],[90,6],[150,9],[230,12]],AR=[[20,2],[45,4],[80,6],[130,8],[200,11]],HC=[[60,5],[110,8],[180,12]];
+const SH=[[40,3],[90,6]],AH=[[35,3],[80,6]],QS=[[50,4],[100,7]],LK=[[45,4],[100,8]];
+const GUARD=[.35,.25,.15];
+const UP=[
+ {id:'sw',l:'⚔ Sword, +2 attack',tb:SW,done:'Your sword gleams.'},
+ {id:'ar',l:'🛡 Armor, −1 damage taken',tb:AR,done:'A sturdier fit.'},
+ {id:'hc',l:'❤ Heart charm, +10 max HP',tb:HC,done:'You feel sturdier.',fx:()=>{P.max+=10;P.hp+=10}},
+ {id:'sh',l:'🔰 Shield polish, guard blocks more',tb:SH,done:'Your guard feels rock solid.'},
+ {id:'ah',l:'🍯 Golden acorns, snacks heal +4',tb:AH,done:'The snacks smell amazing.'},
+ {id:'qs',l:'💥 Quick strike, power strike recharges faster',tb:QS,done:'You feel quicker.'},
+ {id:'lk',l:'🍀 Lucky charm, +25% coins from slimes',tb:LK,done:'The charm jingles.'}];
 
 function svg(d){
  const c=d.color;
@@ -119,8 +129,8 @@ for(const k in DEF){const i=new Image();i.onload=()=>mode==='map'&&drawMap();i.s
 
 /* Arlo: look changes with sword level (blade) and armor level (tunic, pads, helm) */
 function hero(sw=0,ar=0,f=0,bk=0,ln=0){
- const tun=['#4f8f5a','#9a6a3a','#8b94a3','#d7b03a'][ar],dk='#0004';
- const bl=['#b8bcc4','#e3edf7','#f2c94c','#6fe3ff'][sw];
+ const tun=['#4f8f5a','#9a6a3a','#8b94a3','#d7b03a','#b04fd7','#e8f2ff'][ar],dk='#0004';
+ const bl=['#b8bcc4','#e3edf7','#f2c94c','#6fe3ff','#ff6bd6','#fff6a8'][sw];
  const lo=f===1?-6:0,ro=f===2?-6:0,sa=f===1?24:f===2?-24:0;
  return `<svg class="hero" viewBox="0 -8 60 88" xmlns="http://www.w3.org/2000/svg">
  <ellipse cx="30" cy="77" rx="17" ry="3" fill="#0003"/>
@@ -169,6 +179,13 @@ function quest(){
  if(P.sw+P.ar<2)return "Hunt forest slimes for coins and jelly, then upgrade your gear at the village shop.";
  return left?`Clear the Slime Caves (${left} slime${left>1?'s':''} left), then open the key chest.`:"Open the key chest at the far end of the caves.";
 }
+function exitHint(){
+ const ka=Object.values(F[cur]).some(d=>DEF[d].king);
+ if(cur===MAPS.length-1)return "This is the last level! Defeat the Eclipse Slime at the right end of the middle row.";
+ if(cur===2&&!P.key)return "The 🚪 door on the right wall is locked. Open the 🧰 key chest in the top-right corner first (defeat every slime in the caves).";
+ if(MAPS[cur].lock&&ka)return "The ➡️ exit is sealed. Defeat the big crowned boss slime on this map to open it.";
+ return "Walk to the glowing exit on the right wall, middle row.";
+}
 function hud(){
  save();
  const pct=P.hp/P.max*100,low=pct<30,nm=['Village','Forest','Caves','Throne','Peak','Ember','Marsh','Spire'];
@@ -176,6 +193,7 @@ function hud(){
  <div><div style="font-size:.85rem"><b>Arlo</b> · ${MAPS[cur].n}</div><div class="dbar"><i style="width:${pct}%;${low?'background:#e0463c':''}"></i><span>HP ${P.hp} / ${P.max}</span></div></div>
  <div class="chips"><span>💰 ${P.coins}</span><span>🟢 ${P.jelly}</span><span>🌰 ${P.pot}</span><span>⚔ ${4+P.sw*2}–${7+P.sw*2}</span><span>🛡 −${P.ar}</span><span>🗝️ ${P.key?'Yes':'No'}</span></div>
  <div class="quest"><b>Quest:</b> ${quest()}</div>
+ <div class="quest" style="border-top:0;padding-top:0"><b>Next level:</b> ${exitHint()}</div>
  <div class="route">${nm.map((n,i)=>`<b class="${i===cur?'on':''}">${n}${i===3&&!P.key?' 🔒':''}</b>`).join(' › ')}</div>`;
 }
 
@@ -187,7 +205,7 @@ function newGame(sv){
    if(c==='P'||c==='Q'){sp[c]={x,y};row[x]='.'}
    if(DEF[c]){f[key(x,y)]=c;row[x]='.'}}));
   G.push(g);INIT.push(f);F.push({...f});SP.push(sp)});
- P={hp:30,max:30,hc:0,pot:2,coins:10,jelly:0,sw:0,ar:0,key:0,cd:0,guard:false,opened:{}};
+ P={hp:30,max:30,hc:0,sh:0,ah:0,qs:0,lk:0,pot:2,coins:10,jelly:0,sw:0,ar:0,key:0,cd:0,guard:false,opened:{}};
  if(!sv)return go(0,'P');
  P={...P,...sv.P,guard:false};G=G.map((g,i)=>sv.G[i]?sv.G[i].map(r=>r.split('')):g);F=F.map((f,i)=>sv.F[i]||f);
  if(G[3][5][12]==='#')G[3][5][12]='>';
@@ -221,6 +239,12 @@ $('quit').onclick=()=>{save();menu()};
 function title(){
  showText({big:1,pic:hero(0,0),title:"Tiny Quest",text:"The Slime King has swallowed the Moon Crumb, the little light that keeps Thimble Hollow warm. You are Arlo, the village handyman, and nobody else volunteered.\n\nBuy supplies in the village, hunt slimes in the forest for coins and jelly, upgrade your gear, then find the key in the slime caves. Only the key opens the throne room."},()=>newGame(),"Start the quest");
 }
+function respawn(){
+ const c=P.ck;
+ go(c?c.map:0,'P');
+ if(c){pl={x:c.x,y:c.y};vis={...pl}}
+ setMsg(c?"You are back at your checkpoint 🚩.":"You are back in the village.");
+}
 function go(i,w){
  cur=i;
  if(MAPS[i].respawn){const n={};for(const k in INIT[i]){const id=INIT[i][k];if(DEF[id].king){if(F[i][k])n[k]=id}else n[k]=id}F[i]=n}
@@ -236,7 +260,7 @@ function move(dx,dy){
  const c=G[cur][ny][nx],k=key(nx,ny);
  if(F[cur][k])return startBattle(k);
  if(c==='#'||c==='~')return;
- if(c==='H'){P.hp=P.max;P.cd=0;setMsg("You rest at the house. HP fully restored.");return hud()}
+ if(c==='H'){P.hp=P.max;P.cd=0;P.ck={map:cur,x:pl.x,y:pl.y,hx:nx,hy:ny};setMsg("You rest at the house. HP restored. 🚩 Checkpoint saved!");return hud()}
  if(c==='S')return shop();
  if(c==='C'||c==='k')return chest(nx,ny,c);
  if(c==='>'){const L=MAPS[cur].lock;if(L&&Object.values(F[cur]).some(id=>DEF[id].king))return setMsg(L);return go(cur+1,'P')}
@@ -270,18 +294,14 @@ document.querySelectorAll('#pad button').forEach(b=>{
 function shop(msg){
  save();
  mode='text';view('textView');
- const s=SW[P.sw],a=AR[P.ar],h=HC[P.hc||0];
- const b=(id,l,ok)=>`<button id="${id}" ${ok?'':'disabled'}>${l}</button>`;
+ const heal=9+4*(P.ah||0);
+ const ups=UP.map(u=>{const lv=P[u.id]||0,c=u.tb[lv];return{u,lv,c,ok:!!c&&P.coins>=c[0]&&P.jelly>=c[1]}});
  $('textView').innerHTML=`<div class="card"><h2>Village Shop</h2><p class="muted">💰 ${P.coins} coins · 🟢 ${P.jelly} jelly</p><p>${msg||"Slime jelly makes excellent gear. Bring me some!"}</p><div class="list">
- ${b('b1',`🌰 Acorn snack, heals 9 (you have ${P.pot}) — 8 coins`,P.coins>=8&&P.pot<9)}
- ${b('b2',s?`⚔ Sword upgrade, +2 attack — ${s[0]} coins, ${s[1]} jelly`:'⚔ Sword fully upgraded',s&&P.coins>=s[0]&&P.jelly>=s[1])}
- ${b('b3',a?`🛡 Armor upgrade, -1 damage taken — ${a[0]} coins, ${a[1]} jelly`:'🛡 Armor fully upgraded',a&&P.coins>=a[0]&&P.jelly>=a[1])}
- ${b('b5',h?`❤ Heart charm, +10 max HP — ${h[0]} coins, ${h[1]} jelly`:'❤ Heart charms maxed',h&&P.coins>=h[0]&&P.jelly>=h[1])}
+ <button id="b1" ${P.coins>=8&&P.pot<9?'':'disabled'}>🌰 Acorn snack, heals ${heal} (you have ${P.pot}) — 8 coins</button>
+ ${ups.map((x,i)=>`<button id="u${i}" ${x.ok?'':'disabled'}>${x.u.l}${x.c?` (Lv ${x.lv}→${x.lv+1}) — ${x.c[0]} coins, ${x.c[1]} jelly`:' — maxed ✔'}</button>`).join('')}
  <button class="primary" id="b4">Leave shop</button></div></div>`;
  $('b1').onclick=()=>{P.coins-=8;P.pot++;shop("One acorn snack, fresh.")};
- $('b2').onclick=()=>{P.coins-=s[0];P.jelly-=s[1];P.sw++;shop("Your sword gleams.")};
- $('b3').onclick=()=>{P.coins-=a[0];P.jelly-=a[1];P.ar++;shop("A sturdier fit.")};
- $('b5').onclick=()=>{P.coins-=h[0];P.jelly-=h[1];P.hc=(P.hc||0)+1;P.max+=10;P.hp+=10;shop("You feel sturdier.")};
+ ups.forEach((x,i)=>$('u'+i).onclick=()=>{P.coins-=x.c[0];P.jelly-=x.c[1];P[x.u.id]=x.lv+1;if(x.u.fx)x.u.fx();shop(x.u.done)});
  $('b4').onclick=toMap;
 }
 
@@ -295,6 +315,11 @@ function drawMap(){
   ctx.font='30px serif';
   const e={'#':m.w,'H':'🏠','S':'🏪','C':'🎁','k':'🧰','>':'➡️','<':'⬅️','D':'🚪'}[c];
   if(e)ctx.fillText(e,x*T+T/2,y*T+T/2+2);
+  if(c==='>'||c==='D'){
+   const op=c==='D'?P.key:!(m.lock&&Object.values(F[cur]).some(d=>DEF[d].king));
+   if(op){ctx.save();ctx.globalAlpha=.5+.35*Math.sin(performance.now()/260);ctx.strokeStyle='#ffd23f';ctx.lineWidth=3;ctx.strokeRect(x*T+2,y*T+2,T-4,T-4);ctx.restore()}
+  }
+  if(c==='H'&&P.ck&&P.ck.map===cur&&P.ck.hx===x&&P.ck.hy===y){ctx.font='16px serif';ctx.fillText('🚩',x*T+T-9,y*T+9)}
  }
  const bob=frame%2*2;
  for(const k in F[cur]){
@@ -332,7 +357,7 @@ function enableBtns(){
  $('a1').disabled=$('a2').disabled=false;$('a3').disabled=!P.pot;$('a4').disabled=!!P.cd;
 }
 function drawB(k='',n=''){
- const pw=P.sw?` (+${P.sw*2})`:"",col=['#ffffff','#e3edf7','#f2c94c','#6fe3ff'][P.sw];
+ const pw=P.sw?` (+${P.sw*2})`:"",col=['#ffffff','#e3edf7','#f2c94c','#6fe3ff','#ff6bd6','#fff6a8'][P.sw];
  const arc=(c,f)=>`<svg class="fx slash ${f?'s2':''}" viewBox="0 0 100 100"><path d="${f?'M88 80 Q52 10 10 24':'M12 82 Q48 8 92 22'}" stroke="${c}" stroke-width="9" fill="none" stroke-linecap="round" pathLength="1"/></svg>`;
  const ring=c=>`<i class="fx ring" style="border-color:${c}"></i>`;
  let pc=P.guard&&k!=='eblock'?' guarded':'',ec='',po='',eo='',pn='',en='',cc='';
@@ -363,8 +388,8 @@ function act(k){
  if(P.cd>0&&k!=='pow')P.cd--;
  if(k==='atk'){n=R(4,7)+P.sw*2;B.hp-=n;say(`Arlo slashes for ${n} damage.`);kind='slash'}
  if(k==='grd'){P.guard=true;say("Arlo raises his sword and braces.");kind='guard'}
- if(k==='heal'){P.pot--;n=Math.min(9,P.max-P.hp);P.hp+=n;say(`Arlo eats an acorn snack and heals ${n}.`);kind='heal'}
- if(k==='pow'){n=R(9,12)+P.sw*2;B.hp-=n;P.cd=3;say(`POWER STRIKE! ${n} damage.`);kind='power'}
+ if(k==='heal'){P.pot--;n=Math.min(9+4*(P.ah||0),P.max-P.hp);P.hp+=n;say(`Arlo eats an acorn snack and heals ${n}.`);kind='heal'}
+ if(k==='pow'){n=R(9,12)+P.sw*2;B.hp-=n;P.cd=3-(P.qs||0);say(`POWER STRIKE! ${n} damage.`);kind='power'}
  if(B.hp<=0){B.hp=0;say(`${B.name} splats into goo!`);drawB(kind,n);return setTimeout(()=>{drawB('edie');setTimeout(win,750)},700)}
  drawB(kind,n);setTimeout(foeTurn,kind==='power'?1000:800);
 }
@@ -373,7 +398,7 @@ function foeTurn(){
  let d=R(B.atk[0],B.atk[1]);if(heavy)d=Math.round(d*1.7);
  d=Math.max(1,d-P.ar);
  let kind=heavy?'eheavy':'eatk',m=`${B.name} ${heavy?'body-slams':'bounces into'} Arlo for ${d}.`;
- if(P.guard){d=Math.max(1,Math.round(d*.35));m=`${B.name} attacks, but Arlo blocks most of it. ${d} damage.`;P.guard=false;kind='eblock'}
+ if(P.guard){d=Math.max(1,Math.round(d*GUARD[P.sh||0]));m=`${B.name} attacks, but Arlo blocks most of it. ${d} damage.`;P.guard=false;kind='eblock'}
  P.hp=Math.max(0,P.hp-d);say(m);
  if(P.hp<=0){drawB(kind,d);return setTimeout(()=>{drawB('pdie');setTimeout(lose,800)},750)}
  rollIntent();drawB(kind,d);
@@ -384,12 +409,12 @@ function win(){
  if(id==='K')return showText({title:"The Slime King falls!",text:"The Slime King drops his crown, hiccups, and admits he was only guarding the Moon Crumb for someone colder.\n\nWith a crack, the east wall of the throne room splits open. A freezing wind pours in from the Frostbite Peak."},()=>{setMsg("A new exit has opened on the east wall.");toMap()},"Climb the peak");
  if(id==='B')return showText({title:"The Frost Titan falls!",text:"The Frost Titan cracks, hiccups, and mutters that it only froze the Moon Crumb's light to keep it safe from something hungrier.\n\nWith a hiss of steam, the east ice wall melts away. Far beyond the Ember Caverns and the Murk Marsh, a dark moon hangs over the Moon Spire."},()=>{setMsg("The east exit is open.");toMap()},"Keep climbing");
  if(id==='M')return showText({title:"You win!",text:"The Eclipse Slime cracks, hiccups, and spits out the Moon Crumb. It rolls across the spire floor, glowing brighter than ever.\n\nYou carry it home to Thimble Hollow, and the whole village cheers. Arlo the handyman is now Arlo the Slime Slayer, though he mostly still fixes fences."},()=>{if(!user.guest){const all=users();all[user.id].save=null;LS.set('tq_users',all);window.tqCloud&&window.tqCloud.save(null)}menu()},"Back to menu");
- const d=DEF[id],c=R(d.c[0],d.c[1]),j=Math.random()<d.j?1:0;
+ const d=DEF[id],c=Math.round(R(d.c[0],d.c[1])*(1+.25*(P.lk||0))),j=Math.random()<d.j?1:0;
  P.coins+=c;P.jelly+=j;
  showText({title:"Slime defeated!",text:`You collect ${c} coins${j?' and 1 slime jelly':''}.${cur===2&&!Object.keys(F[2]).length?"\n\nThe cave falls quiet. Nothing guards the chest at the far end now.":""}`},toMap);
 }
 function lose(){
- showText({title:"Arlo needs a nap",text:"Everything goes wobbly and green. You wake up in the village with your HP restored. Your coins are safe, and the slimes are still out there."},()=>{P.hp=P.max;P.cd=0;go(0,'P')},"Get back up");
+ showText({title:"Arlo needs a nap",text:"Everything goes wobbly and green. You wake up at your last checkpoint with your HP restored. Your coins are safe, and the slimes are still out there."},()=>{P.hp=P.max;P.cd=0;respawn()},"Get back up");
 }
 /* Called by auth-guard.js once Firebase confirms who is logged in */
 window.startTinyQuest=(name,uid,cloudSave)=>{
