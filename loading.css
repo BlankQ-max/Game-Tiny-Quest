@@ -47,7 +47,7 @@ body {
     /*
        YOUR UPLOADED BACKGROUND
     */
-    background-image: url("BackGround.png");
+    background-image: url("BackGround.png"), linear-gradient(#4aa9df, #8bea62);
 
     background-size: cover;
 

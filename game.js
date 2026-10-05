@@ -137,53 +137,15 @@ function newGame(sv){
  setMsg('Welcome back, '+user.name+'.');toMap();
 }
 /* ---------- login / accounts (stored on this device) ---------- */
-let user=null,authMode='in';
+let user=null;
 const LS={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const users=()=>LS.get('tq_users')||{};
-async function hash(salt,pw){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(salt+':'+pw));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
 function save(){
  if(!user||user.guest||!P||!G)return;
  const all=users(),a=all[user.id];if(!a)return;
  a.save={P:{...P,guard:false},cur,pl,G:G.map(g=>g.map(r=>r.join(''))),F};
  LS.set('tq_users',all);
  if(window.tqCloud)window.tqCloud.save(a.save);
-}
-function showLogin(){
- mode='text';view('textView');user=null;
- const up=authMode==='up';
- $('textView').innerHTML=`<div class="card"><div style="text-align:center">${hero(0,0)}<h1>Tiny Quest</h1></div>
- <div class="tabs"><button id="tIn" class="${up?'':'on'}">Log in</button><button id="tUp" class="${up?'on':''}">Create account</button></div>
- <label for="u">Username</label><input id="u" maxlength="16" autocomplete="username" autocapitalize="off">
- <label for="p">Password</label><input id="p" type="password" maxlength="64" autocomplete="${up?'new-password':'current-password'}">
- ${up?`<label for="p2">Confirm password</label><input id="p2" type="password" maxlength="64" autocomplete="new-password">`:''}
- <p id="err" role="alert" style="color:var(--hp);min-height:1.4em;margin:8px 0"></p>
- <div class="list"><button class="primary" id="go">${up?'Create account':'Log in'}</button><button id="guest">Play as guest</button></div>
- <p class="muted" style="margin-top:12px">Accounts are saved on this device only. Your password is hashed in your browser and never sent anywhere. Guests can play, but progress is not saved.</p></div>`;
- $('tIn').onclick=()=>{authMode='in';showLogin()};
- $('tUp').onclick=()=>{authMode='up';showLogin()};
- $('guest').onclick=()=>{user={name:'Guest',guest:1};menu()};
- const go=async()=>{
-  const n=$('u').value.trim(),pw=$('p').value,err=t=>{$('err').textContent=t};
-  if(!/^[A-Za-z0-9_]{3,16}$/.test(n))return err("Username: 3 to 16 letters, numbers, or underscores.");
-  if(pw.length<4)return err("Password must be at least 4 characters.");
-  const all=users(),id=n.toLowerCase();
-  try{
-   if(up){
-    if(pw!==$('p2').value)return err("Passwords do not match.");
-    if(all[id])return err("That username is already taken on this device.");
-    const salt=crypto.getRandomValues(new Uint32Array(2)).join('-');
-    all[id]={name:n,salt,hash:await hash(salt,pw),save:null};
-    if(!LS.set('tq_users',all))return err("This browser is blocking saved accounts. Try guest play.");
-   }else{
-    const a=all[id];
-    if(!a||a.hash!==await hash(a.salt,pw))return err("Wrong username or password.");
-   }
-  }catch(x){return err("Login is not available in this browser. Try guest play.")}
-  user={name:all[id].name,id,guest:0};menu();
- };
- $('go').onclick=go;
- ['u','p','p2'].forEach(i=>{const el=$(i);if(el)el.onkeydown=e=>{if(e.key==='Enter')go()}});
- $('u').focus();
 }
 function menu(){
  mode='text';view('textView');
@@ -371,5 +333,6 @@ window.startTinyQuest=(name,uid,cloudSave)=>{
  a.name=name;
  if(cloudSave!==undefined)a.save=cloudSave;   // cloud copy wins (null = none)
  all[uid]=a;LS.set('tq_users',all);
+ const boot=$('boot');if(boot)boot.remove();
  user={name,id:uid,guest:0};menu();
 };

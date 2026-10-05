@@ -6,7 +6,7 @@
 }
 
 .login-background {
-    background-image: url("Tiny\ Questbg.png");
+    background-image: url("Tiny\ Questbg.png"), linear-gradient(#65c8ff, #b8ed9c);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -97,6 +97,9 @@ button:hover {
 
 .forgot {
     margin-top: 20px;
+    cursor: pointer;
+    color: #258ad6;
+    text-decoration: underline;
 }
 
 a {

@@ -4,10 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tiny Quest</title>
-<link rel="stylesheet" href="game.css">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main>
+ <p id="boot" class="card">Loading your adventure…</p>
  <section id="mapView" hidden>
   <canvas id="cv" width="1040" height="880" aria-label="Game map"></canvas>
   <div class="side">
@@ -26,6 +27,7 @@
  <section id="battleView" hidden></section>
  <section id="textView" hidden></section>
 </main>
+<script src="env-check.js"></script>
 <script src="game.js"></script>
 <script type="module" src="auth-guard.js"></script>
 </body>
