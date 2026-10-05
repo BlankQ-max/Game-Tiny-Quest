@@ -44,6 +44,8 @@ const tips = [
 
     "Tip: Look for the glowing exit on the right wall.",
 
+    "Tip: Bobo the merchant sells upgrades. Look for his 💬 on the map.",
+
     "Tip: Slime jelly buys better swords and armor.",
 
     "Tip: Guard when a slime is winding up a big hit.",
