@@ -50,6 +50,10 @@ const tips = [
 
     "Tip: The Slime King is not the last boss...",
 
+    "Tip: Heart charms in the shop raise your max HP.",
+
+    "Tip: Fire and Mud Slimes hit harder than the ones at home.",
+
     "Tip: Frost Slimes hit hard. Keep acorn snacks ready."
 
 ];
