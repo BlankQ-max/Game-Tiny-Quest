@@ -48,7 +48,9 @@ const tips = [
 
     "Tip: Find the key in the Slime Caves.",
 
-    "Tip: Defeat the Slime King to win!"
+    "Tip: The Slime King is not the last boss...",
+
+    "Tip: Frost Slimes hit hard. Keep acorn snacks ready."
 
 ];
 
