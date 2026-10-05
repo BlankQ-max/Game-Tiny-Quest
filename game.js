@@ -116,19 +116,20 @@ const REWARD=3;                       // coin multiplier for slimes and chests
 const BR={K:[300,10],B:[600,16]};     // boss rewards: [coins, jelly]
 const LV=i=>1+.4*i;                   // rewards grow with each level (Village x1.0 ... Moon Spire x3.8)
 const UP=[
- {id:'sw',l:'⚔ Sword, +2 attack',tb:SW,done:'Your sword gleams.'},
- {id:'ar',l:'🛡 Armor, −1 damage taken',tb:AR,done:'A sturdier fit.'},
- {id:'hc',l:'❤ Heart charm, +10 max HP',tb:HC,done:'You feel sturdier.',fx:()=>{P.max+=10;P.hp+=10}},
- {id:'sh',l:'🔰 Shield polish, guard blocks more',tb:SH,done:'Your guard feels rock solid.'},
- {id:'ah',l:'🍯 Golden acorns, snacks heal +4',tb:AH,done:'The snacks smell amazing.'},
- {id:'qs',l:'💥 Quick strike, power strike recharges faster',tb:QS,done:'You feel quicker.'},
- {id:'lk',l:'🍀 Lucky charm, +25% coins from slimes',tb:LK,done:'The charm jingles.'}];
+ {id:'sw',l:'⚔ Sword, +2 attack',tb:SW,done:'That blade will sing! Try not to dull it on rocks.'},
+ {id:'ar',l:'🛡 Armor, −1 damage taken',tb:AR,done:'A perfect fit! Slimes will bounce right off.'},
+ {id:'hc',l:'❤ Heart charm, +10 max HP',tb:HC,done:'A charm for your heart. Stay strong, friend!',fx:()=>{P.max+=10;P.hp+=10}},
+ {id:'sh',l:'🔰 Shield polish, guard blocks more',tb:SH,done:'Polished till it shines. Block like a champion!'},
+ {id:'ah',l:'🍯 Golden acorns, snacks heal +4',tb:AH,done:"Golden acorns, my grandmother's recipe!"},
+ {id:'qs',l:'💥 Quick strike, power strike recharges faster',tb:QS,done:'Quick hands win fights. Good choice!'},
+ {id:'lk',l:'🍀 Lucky charm, +25% coins from slimes',tb:LK,done:'Jingle jingle! Fortune smiles on you.'}];
 
 function svg(d){
  const c=d.color;
  return `<svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg"><path d="M8 72 Q4 28 50 20 Q96 28 92 72 Z" fill="${c}" stroke="#0004" stroke-width="3"/><ellipse cx="34" cy="38" rx="9" ry="5" fill="#fff5" transform="rotate(-25 34 38)"/><circle cx="37" cy="50" r="8" fill="#fff"/><circle cx="63" cy="50" r="8" fill="#fff"/><circle cx="39" cy="51" r="3.5" fill="#222"/><circle cx="65" cy="51" r="3.5" fill="#222"/><path d="M40 63 Q50 70 60 63" stroke="#222" stroke-width="3" fill="none" stroke-linecap="round"/>${d.ice?'<path d="M26 28 L30 8 L38 22 L44 0 L50 20 L56 0 L62 22 L70 8 L74 28 Z" fill="'+(d.cf||'#e8fbff')+'" stroke="'+(d.cs||'#4aa8d8')+'" stroke-width="2.5"/>':d.king?'<path d="M30 26 L34 6 L43 18 L50 2 L57 18 L66 6 L70 26 Z" fill="#f6c343" stroke="#a27a0c" stroke-width="2.5"/>':''}</svg>`}
 const IMG={};
 for(const k in DEF){const i=new Image();i.onload=()=>mode==='map'&&drawMap();i.src='data:image/svg+xml,'+encodeURIComponent(svg(DEF[k]));IMG[k]=i}
+const MIMG=new Image();MIMG.onload=()=>mode==='map'&&drawMap();MIMG.src='data:image/svg+xml,'+encodeURIComponent(merchant());
 
 /* Arlo: look changes with sword level (blade) and armor level (tunic, pads, helm) */
 function hero(sw=0,ar=0,f=0,bk=0,ln=0){
@@ -155,6 +156,28 @@ function hero(sw=0,ar=0,f=0,bk=0,ln=0){
  ${bk?'':ar>=2?`<path d="M17 22 Q17 6 30 6 Q43 6 43 22 L38 17 Q30 13 22 17Z" fill="#9aa3b2" stroke="${dk}" stroke-width="2"/>`:`<path d="M18 21 Q19 6 32 8 Q43 9 42 21 Q36 13 30 14 Q23 14 18 21Z" fill="#5a3a22" stroke="${dk}"/>`}
  ${ar>=3?`<path d="M30 6 Q36 -4 46 2 Q39 5 35 10Z" fill="#c9503c" stroke="${dk}"/>`:''}
  </g></svg>`}
+function merchant(){
+ const dk='#0004';
+ return `<svg class="hero" viewBox="0 -8 60 88" xmlns="http://www.w3.org/2000/svg">
+ <ellipse cx="30" cy="77" rx="18" ry="3" fill="#0003"/>
+ <rect x="6" y="30" width="22" height="30" rx="8" fill="#a8743a" stroke="${dk}" stroke-width="2"/>
+ <rect x="4" y="24" width="26" height="9" rx="4.5" fill="#e0c07a" stroke="${dk}" stroke-width="1.5"/>
+ <circle cx="11" cy="47" r="4" fill="#d9a441" stroke="${dk}"/><rect x="20" y="42" width="5" height="12" rx="2" fill="#7b4fc4"/>
+ <rect x="22" y="56" width="7" height="16" rx="2" fill="#4a3a2a"/><rect x="20" y="68" width="10" height="7" rx="3" fill="#5a3a22" stroke="${dk}"/>
+ <rect x="32" y="56" width="7" height="16" rx="2" fill="#4a3a2a"/><rect x="31" y="68" width="10" height="7" rx="3" fill="#5a3a22" stroke="${dk}"/>
+ <path d="M16 36 Q30 30 44 36 L47 63 Q30 70 13 63 Z" fill="#7b4fc4" stroke="${dk}" stroke-width="2"/>
+ <rect x="22" y="42" width="16" height="22" rx="4" fill="#f4e3b0" stroke="${dk}"/>
+ <circle cx="38" cy="55" r="6" fill="#d9a441" stroke="${dk}" stroke-width="1.5"/><text x="38" y="58" font-size="8" text-anchor="middle" fill="#7a5410">$</text>
+ <rect x="40" y="38" width="8" height="18" rx="4" fill="#7b4fc4" stroke="${dk}" stroke-width="1.5"/><circle cx="46" cy="57" r="4" fill="#e8b98a"/>
+ <g transform="rotate(-150 16 38)"><rect x="12" y="36" width="8" height="18" rx="4" fill="#7b4fc4" stroke="${dk}" stroke-width="1.5"/><circle cx="16" cy="55" r="4" fill="#e8b98a"/></g>
+ <circle cx="30" cy="22" r="12" fill="#e8b98a" stroke="${dk}" stroke-width="2"/>
+ <circle cx="25" cy="21" r="1.8" fill="#222"/><circle cx="35" cy="21" r="1.8" fill="#222"/>
+ <circle cx="22" cy="25" r="2.4" fill="#e98a7a" opacity=".6"/><circle cx="38" cy="25" r="2.4" fill="#e98a7a" opacity=".6"/>
+ <path d="M20 26 Q25 31 30 27 Q35 31 40 26 Q36 35 30 30 Q24 35 20 26Z" fill="#5a3a22" stroke="${dk}"/>
+ <path d="M16 15 Q18 2 30 2 Q42 2 44 15 Q30 9 16 15Z" fill="#e0524a" stroke="${dk}" stroke-width="2"/>
+ <path d="M17 13 Q30 8 43 13" stroke="#b8332d" stroke-width="2" fill="none"/>
+ <circle cx="30" cy="5" r="3" fill="#ffd23f" stroke="${dk}"/>
+ </svg>`}
 const HI={};
 function heroImg(f,v){
  const b=P.sw+'-'+P.ar;
@@ -172,7 +195,7 @@ function showText(o,cb,btn){
  $('textView').innerHTML=`<div class="card">${o.pic||''}<h2 style="${o.big?'font-size:2.4rem':''}">${o.title}</h2>${o.text.split("\n\n").map(t=>`<p>${t}</p>`).join("")}<button class="primary" id="ok">${btn||'Continue'}</button></div>`;
  $('ok').onclick=cb;$('ok').focus();
 }
-const BUILD=13;
+const BUILD=14;
 function fixExits(){   // older saves kept their own copy of each map and are missing newer exits
  G.forEach((g,i)=>{if(MAPS[i].rows[5][12]==='>'&&g[5][12]==='#')g[5][12]='>'});
 }
@@ -184,7 +207,7 @@ function quest(){
  if(!ka(4))return "Reach the Moon Spire at the end of the climb and defeat the Last King Slime to win back the Moon Crumb.";
  if(!ka(3))return cur===4?"Defeat the Frost Titan in the far corner of the peak.":"The Slime King is beaten! Take the cracked east door to Frostbite Peak.";
  if(P.key)return "You have the key! Take it to the locked door at the end of the caves and defeat the Slime King.";
- if(P.sw+P.ar<2)return "Hunt forest slimes for coins and jelly, then upgrade your gear at the village shop.";
+ if(P.sw+P.ar<2)return "Hunt forest slimes for coins and jelly, then buy upgrades from Bobo the merchant (look for the 💬 in towns).";
  return left?`Clear the Slime Caves (${left} slime${left>1?'s':''} left), then open the key chest.`:"Open the key chest at the far end of the caves.";
 }
 function exitOpen(){return !Object.keys(F[cur]).length||!!(P.cl&&P.cl[cur])}
@@ -304,16 +327,22 @@ document.querySelectorAll('#pad button').forEach(b=>{
  b.onpointerup=b.onpointerleave=b.onpointercancel=off;
 });
 
+function greet(){
+ if(P.won)return "The Slime Slayer herself! Browse all you like, friend.";
+ if(UP.every(u=>(P[u.id]||0)>=u.tb.length))return "You bought everything I've got! Bobo is a very happy merchant.";
+ const g=["Welcome, traveler! The finest goods in the forest!","Slime jelly makes excellent gear. Bring me some!","Come in, come in! Mind the acorns.","Bobo's prices are fair, and my mustache never lies."];
+ return g[Math.floor(Math.random()*g.length)];
+}
 function shop(msg){
  save();
  mode='text';view('textView');
  const heal=9+4*(P.ah||0);
  const ups=UP.map(u=>{const lv=P[u.id]||0,c=u.tb[lv];return{u,lv,c,ok:!!c&&P.coins>=c[0]&&P.jelly>=c[1]}});
- $('textView').innerHTML=`<div class="card"><h2>Village Shop</h2><p class="muted">💰 ${P.coins} coins · 🟢 ${P.jelly} jelly</p><p>${msg||"Slime jelly makes excellent gear. Bring me some!"}</p><div class="list">
+ $('textView').innerHTML=`<div class="card"><div style="text-align:center">${merchant()}</div><h2 style="text-align:center">Bobo the Merchant</h2><p class="muted" style="text-align:center">💰 ${P.coins} coins · 🟢 ${P.jelly} jelly</p><p style="background:var(--btn);border:2px solid var(--line);border-radius:12px;padding:10px 12px">💬 “${msg||greet()}”</p><div class="list">
  <button id="b1" ${P.coins>=8&&P.pot<9?'':'disabled'}>🌰 Acorn snack, heals ${heal} (you have ${P.pot}) — 8 coins</button>
  ${ups.map((x,i)=>`<button id="u${i}" ${x.ok?'':'disabled'}>${x.u.l}${x.c?` (Lv ${x.lv}→${x.lv+1}) — ${x.c[0]} coins, ${x.c[1]} jelly`:' — maxed ✔'}</button>`).join('')}
- <button class="primary" id="b4">Leave shop</button></div></div>`;
- $('b1').onclick=()=>{P.coins-=8;P.pot++;shop("One acorn snack, fresh.")};
+ <button class="primary" id="b4">Say goodbye to Bobo</button></div></div>`;
+ $('b1').onclick=()=>{P.coins-=8;P.pot++;shop("Fresh from the oak! Mind the shells.")};
  ups.forEach((x,i)=>$('u'+i).onclick=()=>{P.coins-=x.c[0];P.jelly-=x.c[1];P[x.u.id]=x.lv+1;if(x.u.fx)x.u.fx();shop(x.u.done)});
  $('b4').onclick=toMap;
 }
@@ -326,8 +355,9 @@ function drawMap(){
   ctx.fillStyle=c==='~'?(m.wc||'#4a90c8'):m.c[(x+y)%2];
   ctx.fillRect(x*T,y*T,T,T);
   ctx.font='30px serif';
-  const e={'#':m.w,'H':'🏠','S':'🏪','C':'🎁','k':'🧰','>':'➡️','<':'⬅️','D':'🚪'}[c];
+  const e={'#':m.w,'H':'🏠','C':'🎁','k':'🧰','>':'➡️','<':'⬅️','D':'🚪'}[c];
   if(e)ctx.fillText(e,x*T+T/2,y*T+T/2+2);
+  if(c==='S'&&MIMG.complete){const b=Math.round(Math.sin(performance.now()/400)*1.5);ctx.drawImage(MIMG,x*T+2,y*T-3+b,T-4,T+3);ctx.font='15px serif';ctx.fillText('💬',x*T+T-7,y*T+6+b)}
   if(c==='>'||c==='D'){
    const op=c==='D'?P.key:exitOpen();
    if(op){ctx.save();ctx.globalAlpha=.5+.35*Math.sin(performance.now()/260);ctx.strokeStyle='#ffd23f';ctx.lineWidth=3;ctx.strokeRect(x*T+2,y*T+2,T-4,T-4);ctx.restore()}
