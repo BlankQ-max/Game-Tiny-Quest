@@ -195,7 +195,7 @@ function showText(o,cb,btn){
  $('textView').innerHTML=`<div class="card">${o.pic||''}<h2 style="${o.big?'font-size:2.4rem':''}">${o.title}</h2>${o.text.split("\n\n").map(t=>`<p>${t}</p>`).join("")}<button class="primary" id="ok">${btn||'Continue'}</button></div>`;
  $('ok').onclick=cb;$('ok').focus();
 }
-const BUILD=14;
+const BUILD=15;
 function fixExits(){   // older saves kept their own copy of each map and are missing newer exits
  G.forEach((g,i)=>{if(MAPS[i].rows[5][12]==='>'&&g[5][12]==='#')g[5][12]='>'});
 }
@@ -251,12 +251,12 @@ G=G.map((g,i)=>sv.G[i]?sv.G[i].map(r=>r.split('')):g);F=F.map((f,i)=>sv.F[i]||f)
 let user=null;
 const LS={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const users=()=>LS.get('tq_users')||{};
-function save(){
+function save(now){
  if(!user||user.guest||!P||!G)return;
  const all=users(),a=all[user.id];if(!a)return;
- a.save={P:{...P,guard:false},cur,pl,G:G.map(g=>g.map(r=>r.join(''))),F};
+ a.save={t:Date.now(),P:{...P,guard:false},cur,pl,G:G.map(g=>g.map(r=>r.join(''))),F};
  LS.set('tq_users',all);
- if(window.tqCloud)window.tqCloud.save(a.save);
+ if(window.tqCloud)window.tqCloud.save(a.save,now);
 }
 function menu(){
  mode='text';view('textView');
@@ -269,7 +269,7 @@ function menu(){
  $('m3').onclick=()=>window.tqLogout&&window.tqLogout();
  (sv?$('m1'):$('m2')).focus();
 }
-$('quit').onclick=()=>{save();menu()};
+$('quit').onclick=()=>{save(true);menu()};
 
 function title(){
  showText({big:1,pic:hero(0,0),title:"Tiny Quest",text:"The Slime King has swallowed the Moon Crumb, the little light that keeps Thimble Hollow warm. You are Arlo, the village handyman, and nobody else volunteered.\n\nBuy supplies in the village, hunt slimes in the forest for coins and jelly, upgrade your gear, then find the key in the slime caves. Only the key opens the throne room."},()=>newGame(),"Start the quest");
@@ -295,7 +295,7 @@ function move(dx,dy){
  const c=G[cur][ny][nx],k=key(nx,ny);
  if(F[cur][k])return startBattle(k);
  if(c==='#'||c==='~')return;
- if(c==='H'){P.hp=P.max;P.cd=0;P.ck={map:cur,x:pl.x,y:pl.y,hx:nx,hy:ny};setMsg("You rest at the house. HP restored. 🚩 Checkpoint saved!");return hud()}
+ if(c==='H'){P.hp=P.max;P.cd=0;P.ck={map:cur,x:pl.x,y:pl.y,hx:nx,hy:ny};setMsg("You rest at the house. HP restored. 🚩 Checkpoint saved!");save(true);return hud()}
  if(c==='S')return shop();
  if(c==='C'||c==='k')return chest(nx,ny,c);
  if(c==='>'){const n=Object.keys(F[cur]).length;if(!exitOpen())return setMsg(`Clear the room first! ${n} slime${n>1?'s':''} left.`);return go(cur+1,'P')}
@@ -334,7 +334,7 @@ function greet(){
  return g[Math.floor(Math.random()*g.length)];
 }
 function shop(msg){
- save();
+ save(true);
  mode='text';view('textView');
  const heal=9+4*(P.ah||0);
  const ups=UP.map(u=>{const lv=P[u.id]||0,c=u.tb[lv];return{u,lv,c,ok:!!c&&P.coins>=c[0]&&P.jelly>=c[1]}});
@@ -456,7 +456,7 @@ function win(){
  const bonus=bc?` Room bonus: +${bc} coins, +${bj} jelly.`:'';
  if(id==='K')return showText({title:"The Slime King falls!",text:"The Slime King drops his crown, hiccups, and admits he was only guarding the Moon Crumb for someone colder.\n\nWith a crack, the east wall of the throne room splits open. A freezing wind pours in from the Frostbite Peak."},()=>{setMsg("A new exit has opened on the east wall. Boss reward: +"+BR.K[0]+" coins, +"+BR.K[1]+" jelly!"+bonus);toMap()},"Climb the peak");
  if(id==='B')return showText({title:"The Frost Titan falls!",text:"The Frost Titan cracks, hiccups, and mutters that it only froze the Moon Crumb's light to keep it safe from something hungrier.\n\nWith a hiss of steam, the east ice wall melts away. Far beyond the Ember Caverns and the Murk Marsh, a dark moon hangs over the Moon Spire."},()=>{setMsg("The east exit is open. Boss reward: +"+BR.B[0]+" coins, +"+BR.B[1]+" jelly!"+bonus);toMap()},"Keep climbing");
- if(id==='M'){P.won=1;save();return ending()}
+ if(id==='M'){P.won=1;save(true);return ending()}
  const d=DEF[id],c=Math.round(R(d.c[0],d.c[1])*REWARD*LV(cur)*(1+.25*(P.lk||0))),j=Math.round((Math.random()<Math.min(1,d.j+.3)?R(1,2):0)*(1+.3*cur));
  P.coins+=c;P.jelly+=j;
  showText({title:"Slime defeated!",text:`You collect ${c} coins${j?` and ${j} slime jelly`:''}.${cur===2&&!Object.keys(F[2]).length?"\n\nThe cave falls quiet. Nothing guards the chest at the far end now.":""}${bc?`\n\nRoom clear bonus: +${bc} coins, +${bj} jelly!`:''}${clr&&cur<MAPS.length-1&&cur!==2?"\n\nThe room is clear. The exit is open!":""}`},toMap);
@@ -472,7 +472,7 @@ function ending(){
   {pic:you,title:"Home at last",text:"In Thimble Hollow, you set the Moon Crumb back above the village. The night sky glows silver, and the whole village cheers.\n\nArlo the handyman is now Arlo the Slime Slayer, though he mostly still fixes fences."},
   {big:1,pic:party+you,title:"THE END",text:`Congratulations, ${user.name}! You defeated the Last King Slime and saved the Moon Crumb.\n\n💰 ${P.coins} coins · 🟢 ${P.jelly} jelly · ⚔ Sword Lv ${P.sw} · 🛡 Armor Lv ${P.ar} · ❤ ${P.max} max HP\n\nYour progress is saved. Choose Continue on the menu to keep exploring!\n\nThanks for playing Tiny Quest!`}
  ];
- const done=()=>{save();menu()};   // progress is kept: Continue resumes in the Moon Spire
+ const done=()=>{save(true);menu()};   // progress is kept: Continue resumes in the Moon Spire
  let i=0;
  const show=()=>{const last=i===pages.length-1;showText(pages[i],last?done:()=>{i++;show()},last?"Back to menu":"Next ▶")};
  show();
@@ -484,7 +484,9 @@ function lose(){
 window.startTinyQuest=(name,uid,cloudSave)=>{
  const all=users(),a=all[uid]||{name,save:null};
  a.name=name;
- if(cloudSave!==undefined)a.save=cloudSave;   // cloud copy wins (null = none)
+ const loc=a.save,cl=cloudSave||null;   // cloudSave: undefined = couldn't read the cloud, null = nothing stored yet
+ if(cl&&(!loc||(cl.t||0)>(loc.t||0)))a.save=cl;                                    // cloud is newer, or this device has nothing
+ else if(loc&&cloudSave!==undefined&&window.tqCloud)window.tqCloud.save(loc,true);   // this device is newer (or cloud is empty): push it up
  all[uid]=a;LS.set('tq_users',all);
  const boot=$('boot');if(boot)boot.remove();
  const note=document.querySelector('#mapView .muted');if(note&&!note.dataset.b){note.dataset.b=1;note.textContent+=' (build '+BUILD+')'}
