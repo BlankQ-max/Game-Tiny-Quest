@@ -13,13 +13,15 @@ const W = 960, H = 540, FLOOR = 450, GRAV = .85;
 
 /* ---------------- fighters ---------------- */
 const FIGHTERS = {
-  arlo:  { name: 'Arlo',        icon: '🗡️', hp: 100, spd: 4.4, jump: 16,   w: 50, h: 108, dmg: 1,    reach: 84, sp: 'slash', cost: 40, spName: 'Moon Slash',  desc: 'Balanced fighter. Moon Slash fires a glowing crescent across the arena.' },
-  king:  { name: 'Slime King',  icon: '👑', hp: 112, spd: 3.3, jump: 14,   w: 92, h: 86,  dmg: 1.1, reach: 90, sp: 'slam',  cost: 50, spName: 'Royal Slam',  desc: 'Slow but heavy. Royal Slam leaps forward and shakes the whole floor.' },
-  frost: { name: 'Frost Slime', icon: '❄️', hp: 98,  spd: 4.8, jump: 16.5, w: 76, h: 74,  dmg: 1,   reach: 80, sp: 'shard', cost: 40, spName: 'Ice Shard',   desc: 'Fast and slippery. Ice Shard slows whoever it hits.' },
-  fire:  { name: 'Fire Slime',  icon: '🔥', hp: 100, spd: 4.1, jump: 15.5, w: 78, h: 76,  dmg: 1,    reach: 82, sp: 'rush',  cost: 45, spName: 'Blazing Rush', desc: 'Aggressive. Blazing Rush charges straight through the arena.' }
+  arlo:  { name: 'Arlo',        icon: '🗡️', hp: 104, spd: 4.4, jump: 16,   w: 50, h: 108, dmg: 1,    reach: 84, sp: 'slash', cost: 40, spName: 'Moon Slash',  desc: 'Balanced fighter. Moon Slash fires a glowing crescent across the arena.' },
+  king:  { name: 'Slime King',  icon: '👑', hp: 104, spd: 3.3, jump: 14,   w: 92, h: 86,  dmg: 1.05, reach: 90, sp: 'slam',  cost: 50, spName: 'Royal Slam',  desc: 'Slow but heavy. Royal Slam leaps forward and shakes the whole floor.' },
+  frost: { name: 'Frost Slime', icon: '❄️', hp: 102, spd: 4.8, jump: 16.5, w: 76, h: 74,  dmg: 1.04,   reach: 80, sp: 'shard', cost: 40, spName: 'Ice Shard',   desc: 'Fast and slippery. Ice Shard slows whoever it hits.' },
+  mud:   { name: 'Mud Slime',   icon: '🟤', hp: 108, spd: 3.8, jump: 15,   w: 80, h: 78,  dmg: 1,    reach: 80, sp: 'mud',     cost: 40, spName: 'Mud Lob',      desc: 'From the Murk Marsh. Mud Lob arcs a sticky blob that leaves a puddle slowing anyone who stands in it.' },
+  last:  { name: 'Last King Slime', icon: '🌑', hp: 114, spd: 3.5, jump: 15, w: 94, h: 90, dmg: 1.06, reach: 92, sp: 'eclipse', cost: 55, spName: 'Eclipse Fall', desc: 'The final boss. Eclipse Fall calls moon shards crashing down around you, so keep moving!' },
+  fire:  { name: 'Fire Slime',  icon: '🔥', hp: 108, spd: 4.1, jump: 15.5, w: 78, h: 76,  dmg: 1,    reach: 82, sp: 'rush',  cost: 45, spName: 'Blazing Rush', desc: 'Aggressive. Blazing Rush charges straight through the arena.' }
 };
-const ORDER = ['arlo', 'king', 'frost', 'fire'];
-const SP_COLOR = { slash: '#9fd8ff', slam: '#ffd23f', shard: '#7fd8ff', rush: '#ff8a3d' };
+const ORDER = ['arlo', 'king', 'frost', 'fire', 'mud', 'last'];
+const SP_COLOR = { slash: '#9fd8ff', slam: '#ffd23f', shard: '#7fd8ff', rush: '#ff8a3d', mud: '#a9783a', eclipse: '#ffe27a' };
 
 // light, light, heavy finisher. su = startup, ac = active, rec = recovery (frames at 60fps)
 const ATK = [
@@ -68,7 +70,7 @@ function createMatch(k1, k2, arenaKey) {
   return {
     arenaKey: ak, arena: ARENAS[ak],
     fighters: [newFighter(k1, 0), newFighter(k2, 1)],
-    round: 1, state: 'intro', t: 0, clock: 3600, proj: [], parts: [], waves: [],
+    round: 1, state: 'intro', t: 0, clock: 3600, proj: [], parts: [], waves: [], puddles: [],
     shake: 0, paused: false, winner: null, msg: '', timeUp: false, events: [], sl: false
   };
 }
@@ -81,7 +83,7 @@ function resetRound(M) {
       block: false, bst: 0, onGround: true, buf: { a: 0, s: 0 }, landed: false, t2: 0, ai: { dur: 0, intent: 'idle' }
     });
   });
-  M.proj = []; M.waves = []; M.clock = 3600; M.state = 'intro'; M.t = 0; M.timeUp = false; M.msg = '';
+  M.proj = []; M.waves = []; M.puddles = []; M.clock = 3600; M.state = 'intro'; M.t = 0; M.timeUp = false; M.msg = '';
 }
 
 const ev = (M, type) => M.events.push(type);
@@ -115,7 +117,7 @@ function strike(M, atk, def, dmg, kb, stun, opt) {
   def.hp = Math.max(0, def.hp - dd);
   def.state = 'hit'; def.t = 0; def.stun = stun; def.vx = dir * kb; def.block = false; def.bst = 0;
   if (opt.launch || def.hp <= 0) { def.vy = -9; def.onGround = false; def.vx = dir * kb * .9; }
-  if (opt.slow) def.slow = opt.slow;
+  if (opt.slow) { def.slow = opt.slow; def.slowIcon = opt.icon || '❄️'; }
   def.flash = 7;
   atk.en = Math.min(100, atk.en + 8 + (dd > 8 ? 4 : 0)); def.en = Math.min(100, def.en + 5);
   M.shake = Math.max(M.shake, dd >= 9 ? 10 : 4);
@@ -125,6 +127,11 @@ function strike(M, atk, def, dmg, kb, stun, opt) {
   return 'hit';
 }
 
+function addPuddle(M, x, owner) {
+  M.puddles.push({ x: clamp(x, 60, W - 60), life: 260, w: 70, owner });
+  const mine = M.puddles.filter(p => p.owner === owner);
+  if (mine.length > 3) M.puddles.splice(M.puddles.indexOf(mine[0]), 1);
+}
 function spawnProj(M, f, p) {
   M.proj.push(Object.assign({ x: f.x + f.face * (f.d.w / 2), y: f.y - f.d.h * .55, owner: f.side }, p));
   ev(M, 'special');
@@ -173,6 +180,17 @@ function updSpecial(M, f, o) {
     f.vx *= .6;
     if (f.t === 10) spawnProj(M, f, { kind: 'shard', vx: f.face * 12.5, dmg: 10, life: 80, kb: 5, stun: 18, slow: 100 });
     if (f.t >= 24) endSp(f);
+  } else if (sp === 'mud') {
+    f.vx *= .6;
+    if (f.t === 10) spawnProj(M, f, { kind: 'mud', icon: '🟤', vx: f.face * 7.5, vy: -11, g: .55, dmg: 8, life: 120, kb: 4, stun: 14, slow: 120 });
+    if (f.t >= 24) endSp(f);
+  } else if (sp === 'eclipse') {
+    f.vx *= .6;
+    if (f.t === 10) {      // three moon shards crash down around where the target stands; they land one after another
+      [-130, 0, 130].forEach((off, i) => M.proj.push({ kind: 'drop', owner: f.side, x: clamp(o.x + off, 50, W - 50), y: -40, vx: 0, vy: 16, wait: 24 + i * 12, dmg: 13, kb: 6, stun: 20, launch: 1, life: 160 }));
+      ev(M, 'special');
+    }
+    if (f.t >= 30) endSp(f);
   } else if (sp === 'slam') {
     if (f.t === 1) { f.vy = -14; f.vx = f.face * 6.5; f.onGround = false; f.landed = false; }
     if (!f.landed && f.t > 6 && f.onGround) {
@@ -309,19 +327,35 @@ function step(M, inps) {
   updFighter(M, b, a, inps[1], true);
   separate(a, b);
 
+  // mud puddles slow whoever stands in them
+  M.puddles.forEach(pd => {
+    pd.life--;
+    const v = M.fighters[1 - pd.owner];
+    if (v.onGround && v.state !== 'ko' && Math.abs(v.x - pd.x) < pd.w + v.d.w * .3) { v.slow = Math.max(v.slow, 8); v.slowIcon = '🟤'; }
+  });
+  M.puddles = M.puddles.filter(pd => pd.life > 0);
+
   // projectiles
   for (const p of M.proj) {
-    p.x += p.vx; p.life--;
+    if (p.wait > 0) { p.wait--; continue; }             // moon shards hover (shown as a floor warning) before falling
+    p.x += p.vx;
+    if (p.vy || p.g) { p.y += p.vy; p.vy += p.g || 0; }
+    p.life--;
     const atk = M.fighters[p.owner], vic = M.fighters[1 - p.owner];
     const box = { x1: p.x - 20, x2: p.x + 20, y1: p.y - 18, y2: p.y + 18 };
     if (overlap(box, hurt(vic))) {
-      if (strike(M, atk, vic, p.dmg, p.kb, p.stun, { launch: p.launch, slow: p.slow, dir: Math.sign(p.vx) })) p.life = 0;
+      if (strike(M, atk, vic, p.dmg, p.kb, p.stun, { launch: p.launch, slow: p.slow, icon: p.icon, dir: Math.sign(p.vx) })) {
+        p.life = 0;
+        if (p.kind === 'mud') addPuddle(M, vic.x, p.owner);
+      }
     }
+    if (p.life > 0 && p.kind === 'mud' && p.y >= FLOOR - 14) { addPuddle(M, p.x, p.owner); sparks(M, p.x, FLOOR - 4, '#8a6a3a', 10, 5); p.life = 0; }
+    if (p.life > 0 && p.kind === 'drop' && p.y + 18 >= FLOOR) { sparks(M, p.x, FLOOR - 6, '#ffe27a', 12, 6); M.shake = Math.max(M.shake, 5); p.life = 0; }
     if (p.x < -60 || p.x > W + 60) p.life = 0;
   }
   // opposing projectiles cancel each other
   for (const p of M.proj) for (const q of M.proj) {
-    if (p !== q && p.owner !== q.owner && p.life > 0 && q.life > 0 && Math.abs(p.x - q.x) < 30 && Math.abs(p.y - q.y) < 34) {
+    if (p !== q && p.owner !== q.owner && p.life > 0 && q.life > 0 && p.kind !== 'drop' && q.kind !== 'drop' && !(p.wait > 0) && !(q.wait > 0) && Math.abs(p.x - q.x) < 30 && Math.abs(p.y - q.y) < 34) {
       p.life = 0; q.life = 0; sparks(M, (p.x + q.x) / 2, p.y, '#ffffff', 10, 6); ev(M, 'block');
     }
   }
@@ -345,6 +379,10 @@ function cpuInput(M, f, o, lvl) {
   const oRecover = ATKo && o.t >= ATKo.su + ATKo.ac;
   const close = ad < o.d.reach + o.d.w / 2 + 30;
   const danger = (oActive && close) || incoming(M, f);
+
+  // 0) step out from under incoming moon shards
+  const drop = M.proj.find(p => p.kind === 'drop' && p.owner !== f.side && Math.abs(p.x - f.x) < 80);
+  if (drop && f.onGround && f.state === 'idle' && Math.random() < .55 + L.blk * .4) { go(f.x >= drop.x ? 1 : -1); return inp; }
 
   // 1) defend: decide once per threat whether to block, after a reaction delay
   if (danger) {
@@ -391,10 +429,10 @@ function spritesFor(key, gear) {
     const k = 'a' + gear.sw + '_' + gear.ar;
     return imgCache[k] || (imgCache[k] = [0, 1, 2].map(fr => svgImg(hero(gear.sw, gear.ar, fr))));
   }
-  return [IMG[{ king: 'K', frost: 'i', fire: 'f' }[key]]];
+  return [IMG[{ king: 'K', frost: 'i', fire: 'f', mud: 'm', last: 'M' }[key]]];
 }
 
-let PV = { mode: 'cpu', lvl: 1, p1: 'arlo', p2: 'king', arena: 'village', gear: { sw: 0, ar: 0 } };
+let PV = { mode: 'cpu', lvl: 1, p1: 'arlo', p2: 'king', arena: 'village', step: 1, gear: { sw: 0, ar: 0 } };
 let M = null, ctx = null, bgCanvas = null, raf = 0, last = 0, acc = 0, muted = false, rec = { w: 0, l: 0 };
 const down = {}; let edge = {};
 
@@ -695,12 +733,29 @@ function drawFighter(c, f) {
     c.beginPath(); c.arc(f.x + f.face * 8, f.y - d.h * .5, d.h * .62, f.face > 0 ? -1.1 : Math.PI - 1.1, f.face > 0 ? 1.1 : Math.PI + 1.1); c.stroke(); c.restore();
   }
   // slow marker
-  if (f.slow > 0) { c.font = '22px serif'; c.textAlign = 'center'; c.fillText('❄️', f.x, f.y - d.h - 18); }
+  if (f.slow > 0) { c.font = '22px serif'; c.textAlign = 'center'; c.fillText(f.slowIcon || '❄️', f.x, f.y - d.h - 18); }
 }
 
 function drawProj(c, p) {
-  c.save(); c.translate(p.x, p.y); c.scale(Math.sign(p.vx), 1);
-  if (p.kind === 'slash') {
+  if (p.kind === 'drop' && p.wait > 0) {              // floor warning before a moon shard falls
+    const k = .35 + .3 * Math.abs(Math.sin(Date.now() / 90));
+    c.save(); c.strokeStyle = 'rgba(255,226,122,' + k * .5 + ')'; c.lineWidth = 16; c.beginPath(); c.moveTo(p.x, 0); c.lineTo(p.x, FLOOR); c.stroke();
+    c.fillStyle = 'rgba(255,226,122,' + k + ')'; c.beginPath(); c.ellipse(p.x, FLOOR + 8, 36, 9, 0, 0, 7); c.fill(); c.restore();
+    return;
+  }
+  c.save(); c.translate(p.x, p.y); c.scale(Math.sign(p.vx) || 1, 1);
+  if (p.kind === 'drop') {
+    c.shadowColor = '#ffe27a'; c.shadowBlur = 22;
+    for (let i = 3; i >= 1; i--) { c.globalAlpha = .12 * (4 - i); c.fillStyle = '#fff3b0'; c.fillRect(-5, -22 - i * 22, 10, 22); }
+    c.globalAlpha = 1; c.fillStyle = '#fff3b0'; c.strokeStyle = '#d9a441'; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(0, 28); c.lineTo(-12, 0); c.lineTo(0, -24); c.lineTo(12, 0); c.closePath(); c.fill(); c.stroke();
+  } else if (p.kind === 'mud') {
+    c.shadowColor = '#6b4e2b'; c.shadowBlur = 8;
+    for (let i = 3; i >= 1; i--) { c.globalAlpha = .18; c.fillStyle = '#6b4e2b'; c.beginPath(); c.arc(-i * 13, i * 3, 9 - i, 0, 7); c.fill(); }
+    c.globalAlpha = 1; const mg = c.createRadialGradient(-4, -5, 2, 0, 0, 19); mg.addColorStop(0, '#b98a4c'); mg.addColorStop(1, '#5b4126');
+    c.fillStyle = mg; c.beginPath(); c.arc(0, 0, 18, 0, 7); c.fill();
+    c.fillStyle = 'rgba(255,255,255,.25)'; c.beginPath(); c.arc(-6, -6, 4, 0, 7); c.fill();
+  } else if (p.kind === 'slash') {
     c.shadowColor = '#9fd8ff'; c.shadowBlur = 20;
     for (let i = 3; i >= 0; i--) {
       c.globalAlpha = i ? .12 : .95; c.fillStyle = '#c9ecff';
@@ -749,6 +804,13 @@ function render() {
   M.waves.forEach(w => {
     const r = 20 + w.t * 11; c.save(); c.globalAlpha = 1 - w.t / 16; c.strokeStyle = '#ffd23f'; c.lineWidth = 6;
     c.beginPath(); c.ellipse(w.x, FLOOR + 4, r * 1.5, r * .28, 0, 0, 7); c.stroke(); c.restore();
+  });
+  M.puddles.forEach(pd => {
+    c.save(); c.globalAlpha = .85 * Math.min(1, pd.life / 40);
+    c.fillStyle = '#4e3820'; c.beginPath(); c.ellipse(pd.x, FLOOR + 8, pd.w, 12, 0, 0, 7); c.fill();
+    c.fillStyle = '#6b4e2b'; c.beginPath(); c.ellipse(pd.x - 6, FLOOR + 6, pd.w * .7, 7, 0, 0, 7); c.fill();
+    for (let i = 0; i < 3; i++) { c.fillStyle = 'rgba(190,150,90,.85)'; c.beginPath(); c.arc(pd.x + Math.sin(M.t / 20 + i * 2) * pd.w * .5, FLOOR + 6 - Math.abs(Math.sin(M.t / 12 + i)) * 8, 3, 0, 7); c.fill(); }
+    c.restore();
   });
   const order = M.fighters.slice().sort((a, b) => a.y - b.y);
   order.forEach(f => drawFighter(c, f));
@@ -872,27 +934,41 @@ function picker() {
   const cpu = PV.mode === 'cpu';
   const fbtn = (k, sel) => `<button data-k="${k}" class="${sel === k ? 'on' : ''}">${k === 'rand' ? '🎲 Random' : FIGHTERS[k].icon + ' ' + FIGHTERS[k].name}</button>`;
   const info = k => k === 'rand' ? '' : `<b>${FIGHTERS[k].name}</b>: ${FIGHTERS[k].desc} Special: ${FIGHTERS[k].spName} (${FIGHTERS[k].cost} energy).`;
+  const wire = (id, fn) => document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => { fn(b.dataset.v !== undefined ? b.dataset.v : b.dataset.k); picker(); });
+
+  if (PV.step === 1) {
+    /* ---------- step 1: mode + fighters ---------- */
+    $('textView').innerHTML = `<div class="card"><h2>⚔ PvP Arena</h2>
+     <p class="muted"><b>Step 1 of 2 · Choose your fighters.</b> Real-time fighting, no turns! Best of 3 rounds. Hit things to build energy, then press K for your special.</p>
+     <label>Mode</label>
+     <div class="tabs" id="pvMode"><button data-v="cpu" class="${cpu ? 'on' : ''}">🤖 Vs CPU</button><button data-v="2p" class="${cpu ? '' : 'on'}">👥 2 Players</button></div>
+     ${cpu ? `<label>CPU level</label><div class="tabs" id="pvLvl">${LEVELS.map((l, i) => `<button data-v="${i}" class="${PV.lvl === i ? 'on' : ''}">${l.name}</button>`).join('')}</div>` : ''}
+     <label>${cpu ? 'Your fighter' : 'Player 1 fighter'}</label>
+     <div class="fgrid" id="pvF1">${ORDER.map(k => fbtn(k, PV.p1)).join('')}</div>
+     <label>${cpu ? 'CPU fighter' : 'Player 2 fighter'}</label>
+     <div class="fgrid" id="pvF2">${ORDER.map(k => fbtn(k, PV.p2)).join('')}${cpu ? fbtn('rand', PV.p2) : ''}</div>
+     <p class="muted" style="margin-top:10px">${info(PV.p1)}</p>
+     <p class="muted">${cpu ? 'Controls: <b>A/D</b> move · <b>W</b> jump · <b>S</b> block · <b>J</b> attack · <b>K</b> special' : '<b>P1</b>: A/D, W jump, S block, J attack, K special.<br><b>P2</b>: ←/→, ↑ jump, ↓ block, <b>,</b> attack, <b>.</b> special.'}</p>
+     <div class="list"><button class="primary" id="pvNext">Next ▶ Choose arena</button><button id="pvBack">Back</button></div></div>`;
+    wire('pvMode', v => { PV.mode = v; if (v === '2p' && PV.p2 === 'rand') PV.p2 = 'king'; });
+    wire('pvLvl', v => { PV.lvl = +v; });
+    wire('pvF1', k => { PV.p1 = k; });
+    wire('pvF2', k => { PV.p2 = k; });
+    $('pvNext').onclick = () => { PV.step = 2; picker(); };
+    $('pvBack').onclick = () => menu();
+    $('pvNext').focus();
+    return;
+  }
+
+  /* ---------- step 2: arena ---------- */
+  const f1 = FIGHTERS[PV.p1], f2 = PV.p2 === 'rand' ? null : FIGHTERS[PV.p2];
   $('textView').innerHTML = `<div class="card"><h2>⚔ PvP Arena</h2>
-   <p class="muted">Real-time fighting, no turns! Best of 3 rounds. Hit things to build energy, then press K for your special.</p>
-   <label>Mode</label>
-   <div class="tabs" id="pvMode"><button data-v="cpu" class="${cpu ? 'on' : ''}">🤖 Vs CPU</button><button data-v="2p" class="${cpu ? '' : 'on'}">👥 2 Players</button></div>
-   ${cpu ? `<label>CPU level</label><div class="tabs" id="pvLvl">${LEVELS.map((l, i) => `<button data-v="${i}" class="${PV.lvl === i ? 'on' : ''}">${l.name}</button>`).join('')}</div>` : ''}
-   <label>${cpu ? 'Your fighter' : 'Player 1 fighter'}</label>
-   <div class="fgrid" id="pvF1">${ORDER.map(k => fbtn(k, PV.p1)).join('')}</div>
-   <label>${cpu ? 'CPU fighter' : 'Player 2 fighter'}</label>
-   <div class="fgrid" id="pvF2">${ORDER.map(k => fbtn(k, PV.p2)).join('')}${cpu ? fbtn('rand', PV.p2) : ''}</div>
-   <label>Arena (one for each adventure level)</label>
+   <p class="muted"><b>Step 2 of 2 · Choose the arena.</b> There is one for each adventure level.</p>
+   <p style="text-align:center;margin:6px 0 10px"><b>${f1.icon} ${f1.name}</b> &nbsp;vs&nbsp; <b>${f2 ? f2.icon + ' ' + f2.name : '🎲 Random'}</b><br><span class="muted">${cpu ? '🤖 Vs CPU · ' + LEVELS[PV.lvl].name : '👥 2 Players'}</span></p>
    <canvas id="pvPrev" width="320" height="180" style="width:100%;height:auto;border-radius:10px;border:2px solid var(--line);display:block"></canvas>
    <div class="fgrid" id="pvAr" style="margin-top:8px">${AORDER.map(k => `<button data-k="${k}" class="${PV.arena === k ? 'on' : ''}">${ARENAS[k].icon} ${ARENAS[k].name}</button>`).join('')}<button data-k="rand" class="${PV.arena === 'rand' ? 'on' : ''}">🎲 Random arena</button></div>
    <p class="muted">${PV.arena === 'rand' ? 'A surprise arena is picked each match.' : ARENAS[PV.arena].desc}</p>
-   <p class="muted" style="margin-top:10px">${info(PV.p1)}</p>
-   <p class="muted">${cpu ? 'Controls: <b>A/D</b> move · <b>W</b> jump · <b>S</b> block · <b>J</b> attack · <b>K</b> special' : '<b>P1</b>: A/D, W jump, S block, J attack, K special.<br><b>P2</b>: ←/→, ↑ jump, ↓ block, <b>,</b> attack, <b>.</b> special.'}</p>
-   <div class="list"><button class="primary" id="pvGo">Fight!</button><button id="pvBack">Back</button></div></div>`;
-  const wire = (id, fn) => document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => { fn(b.dataset.v !== undefined ? b.dataset.v : b.dataset.k); picker(); });
-  wire('pvMode', v => { PV.mode = v; if (v === '2p' && PV.p2 === 'rand') PV.p2 = 'king'; });
-  wire('pvLvl', v => { PV.lvl = +v; });
-  wire('pvF1', k => { PV.p1 = k; });
-  wire('pvF2', k => { PV.p2 = k; });
+   <div class="list"><button class="primary" id="pvGo">Fight!</button><button id="pvBack">◀ Back to fighters</button></div></div>`;
   wire('pvAr', k => { PV.arena = k; });
   try {
     const pc = $('pvPrev').getContext('2d');
@@ -900,7 +976,7 @@ function picker() {
     else pc.drawImage(getBG(PV.arena), 0, 0, 320, 180);
   } catch (e) { /* preview is optional */ }
   $('pvGo').onclick = () => { rec = { w: 0, l: 0 }; start(); };
-  $('pvBack').onclick = () => menu();
+  $('pvBack').onclick = () => { PV.step = 1; picker(); };
   $('pvGo').focus();
 }
 
@@ -918,7 +994,7 @@ function wirePad() {
 }
 
 window.TQPvp = {
-  open(gear) { PV.gear = gear || { sw: 0, ar: 0 }; wirePad(); picker(); },
+  open(gear) { PV.gear = gear || { sw: 0, ar: 0 }; PV.step = 1; wirePad(); picker(); },
   _engine: { createMatch, step, cpuInput, FIGHTERS, ORDER, LEVELS, ATK, FLOOR, W, ARENAS, AORDER }
 };
 })();
