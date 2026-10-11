@@ -188,14 +188,14 @@ let G,F,INIT,SP,cur,pl,P,mode='text',B,busy,log=[],frame=0,curKey,face=1,vw=0,vi
 const isMoving=()=>Math.abs(vis.x-pl.x)>.001||Math.abs(vis.y-pl.y)>.001;
 const cv=$('cv'),ctx=cv.getContext('2d');ctx.scale(2,2);
 const key=(x,y)=>x+','+y;
-function view(v){['mapView','battleView','textView'].forEach(x=>$(x).hidden=x!==v)}
+function view(v){['mapView','battleView','textView','pvpView'].forEach(x=>$(x).hidden=x!==v)}
 function setMsg(t){$('status').textContent=t}
 function showText(o,cb,btn){
  mode='text';view('textView');
  $('textView').innerHTML=`<div class="card">${o.pic||''}<h2 style="${o.big?'font-size:2.4rem':''}">${o.title}</h2>${o.text.split("\n\n").map(t=>`<p>${t}</p>`).join("")}<button class="primary" id="ok">${btn||'Continue'}</button></div>`;
  $('ok').onclick=cb;$('ok').focus();
 }
-const BUILD=15;
+const BUILD=16;
 function fixExits(){   // older saves kept their own copy of each map and are missing newer exits
  G.forEach((g,i)=>{if(MAPS[i].rows[5][12]==='>'&&g[5][12]==='#')g[5][12]='>'});
 }
@@ -263,9 +263,10 @@ function menu(){
  const sv=user.guest?null:(users()[user.id]||{}).save;
  $('textView').innerHTML=`<div class="card"><div style="text-align:center">${hero(sv?sv.P.sw:0,sv?sv.P.ar:0)}</div><h2>Welcome, ${user.name}</h2>
  ${sv?`<p>Saved game: ${MAPS[sv.cur].n}, ${sv.P.coins} coins, sword level ${sv.P.sw}, armor level ${sv.P.ar}${sv.P.key?', key in hand':''}.${sv.P.won?' 🏆 Adventure complete!':''}</p>`:`<p class="muted">${user.guest?"Guest play does not save your progress.":"No saved game yet."}</p>`}
- <div class="list">${sv?'<button class="primary" id="m1">Continue</button>':''}<button id="m2" class="${sv?'':'primary'}">New game</button><button id="m3">Log out</button></div></div>`;
+ <div class="list">${sv?'<button class="primary" id="m1">Continue</button>':''}<button id="m2" class="${sv?'':'primary'}">New game</button><button id="m4">⚔ PvP Arena</button><button id="m3">Log out</button></div></div>`;
  if(sv)$('m1').onclick=()=>newGame(sv);
  $('m2').onclick=()=>{if(sv&&!confirm('Starting a new game will replace your saved game'+(sv.P.won?' (including your finished adventure)':'')+'. Start over?'))return;title()};
+ $('m4').onclick=()=>window.TQPvp?TQPvp.open({sw:sv?sv.P.sw:0,ar:sv?sv.P.ar:0}):alert('PvP files did not load. Make sure pvp.js is on the page.');
  $('m3').onclick=()=>window.tqLogout&&window.tqLogout();
  (sv?$('m1'):$('m2')).focus();
 }

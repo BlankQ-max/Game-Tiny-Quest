@@ -26,10 +26,20 @@
  </section>
  <section id="battleView" hidden></section>
  <section id="textView" hidden></section>
+ <section id="pvpView" hidden>
+  <canvas id="pvpCv" width="960" height="540" aria-label="PvP arena"></canvas>
+  <p class="muted" id="pvpHelp" style="text-align:center;margin:0"></p>
+  <div class="pvpPad" id="pvpPad">
+   <div><button data-k="KeyA" aria-label="Left">◀</button><button data-k="KeyD" aria-label="Right">▶</button></div>
+   <div><button data-k="KeyW" aria-label="Jump">▲</button><button data-k="KeyS" aria-label="Block">🛡</button><button data-k="KeyJ">J</button><button data-k="KeyK">K</button></div>
+  </div>
+  <div class="pvpBar"><button id="pvQuit">⬅ Leave arena</button><button id="pvPause">⏸ Pause</button><button id="pvAgain" class="primary" hidden>🔁 Rematch</button></div>
+ </section>
  <p id="cloud" class="muted" style="text-align:center;margin-top:10px"></p>
 </main>
 <script src="env-check.js"></script>
-<script src="game.js?v=15"></script>
+<script src="game.js?v=16"></script>
+<script src="pvp.js?v=1"></script>
 <script type="module" src="auth-guard.js"></script>
 </body>
 </html>

@@ -123,3 +123,15 @@ svg.hero{width:80px;height:110px}
 @media (hover:hover) and (pointer:fine){.pad{display:none}}
 /* short screens: tighten the side panel so everything fits without scrolling */
 @media (max-height:700px){.dash{padding:6px 10px;gap:4px 10px}.por svg.hero{width:34px;height:46px}#status{margin:4px 2px}}
+
+/* ---- PvP arena ---- */
+#pvpView{display:flex;flex-direction:column;align-items:center;gap:8px}
+#pvpView[hidden]{display:none!important}
+#pvpCv{width:min(100%,calc((100vh - 130px) * 16 / 9));max-width:960px;height:auto;aspect-ratio:16/9;background:#10131f;touch-action:none}
+.pvpBar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.pvpPad{display:none;width:100%;justify-content:space-between;gap:10px}
+@media (hover:none){.pvpPad{display:flex}}
+.pvpPad div{display:flex;gap:8px}
+.pvpPad button{min-width:58px;height:54px;padding:0;font-size:1.15rem;user-select:none;-webkit-user-select:none;touch-action:none}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fgrid button.on{background:var(--accent);color:var(--onacc);border-color:var(--accent);font-weight:bold}

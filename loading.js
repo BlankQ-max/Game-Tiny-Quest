@@ -54,6 +54,8 @@ const tips = [
 
     "Tip: The Slime King is not the last boss...",
 
+    "Tip: Try the PvP Arena on the main menu! J attacks, K uses your special.",
+
     "Tip: Heart charms in the shop raise your max HP.",
 
     "Tip: Fire and Mud Slimes hit harder than the ones at home.",
