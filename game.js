@@ -195,7 +195,7 @@ function showText(o,cb,btn){
  $('textView').innerHTML=`<div class="card">${o.pic||''}<h2 style="${o.big?'font-size:2.4rem':''}">${o.title}</h2>${o.text.split("\n\n").map(t=>`<p>${t}</p>`).join("")}<button class="primary" id="ok">${btn||'Continue'}</button></div>`;
  $('ok').onclick=cb;$('ok').focus();
 }
-const BUILD=16;
+const BUILD=17;
 function fixExits(){   // older saves kept their own copy of each map and are missing newer exits
  G.forEach((g,i)=>{if(MAPS[i].rows[5][12]==='>'&&g[5][12]==='#')g[5][12]='>'});
 }
