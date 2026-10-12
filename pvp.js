@@ -931,6 +931,7 @@ function quit() { cancelAnimationFrame(raf); raf = 0; mode = 'text'; menu(); }
 function picker() {
   cancelAnimationFrame(raf);
   mode = 'text'; view('textView');
+  if (window.TQMusic) TQMusic.pause();
   const cpu = PV.mode === 'cpu';
   const fbtn = (k, sel) => `<button data-k="${k}" class="${sel === k ? 'on' : ''}">${k === 'rand' ? '🎲 Random' : FIGHTERS[k].icon + ' ' + FIGHTERS[k].name}</button>`;
   const info = k => k === 'rand' ? '' : `<b>${FIGHTERS[k].name}</b>: ${FIGHTERS[k].desc} Special: ${FIGHTERS[k].spName} (${FIGHTERS[k].cost} energy).`;

@@ -188,14 +188,20 @@ let G,F,INIT,SP,cur,pl,P,mode='text',B,busy,log=[],frame=0,curKey,face=1,vw=0,vi
 const isMoving=()=>Math.abs(vis.x-pl.x)>.001||Math.abs(vis.y-pl.y)>.001;
 const cv=$('cv'),ctx=cv.getContext('2d');ctx.scale(2,2);
 const key=(x,y)=>x+','+y;
-function view(v){['mapView','battleView','textView','pvpView'].forEach(x=>$(x).hidden=x!==v)}
+function view(v){
+ ['mapView','battleView','textView','pvpView'].forEach(x=>$(x).hidden=x!==v);
+ if(window.TQMusic){   // adventure music plays on the map and in battles, and keeps going through shops and story pages
+  if(v==='mapView'||v==='battleView')TQMusic.play('adventure');
+  else if(v==='pvpView')TQMusic.pause();
+ }
+}
 function setMsg(t){$('status').textContent=t}
 function showText(o,cb,btn){
  mode='text';view('textView');
  $('textView').innerHTML=`<div class="card">${o.pic||''}<h2 style="${o.big?'font-size:2.4rem':''}">${o.title}</h2>${o.text.split("\n\n").map(t=>`<p>${t}</p>`).join("")}<button class="primary" id="ok">${btn||'Continue'}</button></div>`;
  $('ok').onclick=cb;$('ok').focus();
 }
-const BUILD=20;
+const BUILD=21;
 function fixExits(){   // older saves kept their own copy of each map and are missing newer exits
  G.forEach((g,i)=>{if(MAPS[i].rows[5][12]==='>'&&g[5][12]==='#')g[5][12]='>'});
 }
@@ -260,6 +266,7 @@ function save(now){
 }
 function menu(){
  mode='text';view('textView');
+ if(window.TQMusic)TQMusic.pause();
  const sv=user.guest?null:(users()[user.id]||{}).save;
  $('textView').innerHTML=`<div class="card"><div style="text-align:center">${hero(sv?sv.P.sw:0,sv?sv.P.ar:0)}</div><h2>Welcome, ${user.name}</h2>
  ${sv?`<p>Saved game: ${MAPS[sv.cur].n}, ${sv.P.coins} coins, sword level ${sv.P.sw}, armor level ${sv.P.ar}${sv.P.key?', key in hand':''}.${sv.P.won?' 🏆 Adventure complete!':''}</p>`:`<p class="muted">${user.guest?"Guest play does not save your progress.":"No saved game yet."}</p>`}
