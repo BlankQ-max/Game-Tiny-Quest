@@ -1,12 +1,57 @@
-/* Tiny Quest background music.
-   TQMusic.play('adventure') fades the track in and loops it, TQMusic.pause() fades it out.
-   The player's on/off choice is remembered (the 🔊 button in the corner). */
+/* Tiny Quest background music (three tracks).
+     adventure : the map, shops and story pages       (resumes where it left off)
+     battle    : turn-based fights in the adventure   (restarts for every fight)
+     pvp       : the PvP Arena                        (restarts for every match)
+   Switching tracks crossfades. The player's on/off choice is remembered (the 🔊 button). */
 (function () {
   'use strict';
-  const SRC = { adventure: 'adventure.mp3' };
-  const VOL = .35;
-  let el = null, want = null, fade = null, muted = false;
+  const TRACKS = {
+    adventure: { src: 'adventure.mp3',     vol: .35, restart: false },
+    battle:    { src: 'fightingmusic.mp3', vol: .20, restart: true  },
+    pvp:       { src: 'pvpmusic.mp3',      vol: .30, restart: true  }
+  };   // volumes are balanced so the three tracks sound equally loud
+  const els = {};
+  let want = null, muted = false;
   try { muted = localStorage.getItem('tq_music') === 'off'; } catch (e) { /* storage blocked: music stays on */ }
+
+  const clamp = v => Math.max(0, Math.min(1, v));
+  function audio(name) {
+    if (!els[name]) {
+      const a = new Audio(TRACKS[name].src);
+      a._name = name; a.loop = true; a.preload = 'auto'; a.volume = 0;
+      els[name] = a;
+    }
+    return els[name];
+  }
+  function fade(a, target, ms, done) {
+    clearInterval(a._f);
+    const from = a.volume, steps = Math.max(1, Math.round(ms / 50)); let i = 0;
+    a._f = setInterval(() => {
+      i++; a.volume = clamp(from + (target - from) * i / steps);
+      if (i >= steps) { clearInterval(a._f); if (done) done(); }
+    }, 50);
+  }
+  function fadeOutAll(except, ms) {
+    for (const n in els) {
+      const a = els[n];
+      if (n !== except && !a.paused) fade(a, 0, ms, () => a.pause());   // a newer fade-in cancels this one
+    }
+  }
+  function silenceAll() { for (const n in els) { clearInterval(els[n]._f); els[n].pause(); } }
+  function startPlaying(a) { const p = a.play(); if (p && p.catch) p.catch(() => { /* blocked until the first click: see the listener below */ }); }
+
+  function play(name) {
+    const t = TRACKS[name]; if (!t) return;
+    want = name;
+    if (muted) return;
+    const a = audio(name);
+    fadeOutAll(name, 700);
+    if (!a.paused) { fade(a, t.vol, 500); return; }          // already playing: nothing to restart
+    if (t.restart) { try { a.currentTime = 0; } catch (e) { /* not loaded yet */ } }
+    startPlaying(a);
+    fade(a, t.vol, t.restart ? 600 : 1500);
+  }
+  function pause() { want = null; fadeOutAll(null, 600); }
 
   function button() { return document.getElementById('musicBtn'); }
   function refresh() {
@@ -15,58 +60,26 @@
     b.setAttribute('aria-pressed', muted ? 'true' : 'false');
     b.title = muted ? 'Music is off. Click to turn it on' : 'Music is on. Click to turn it off';
   }
-  function fadeTo(target, ms, done) {
-    clearInterval(fade);
-    const a = el; if (!a) return;
-    const from = a.volume, steps = Math.max(1, Math.round(ms / 50)); let i = 0;
-    fade = setInterval(() => {
-      i++; a.volume = Math.max(0, Math.min(1, from + (target - from) * i / steps));
-      if (i >= steps) { clearInterval(fade); if (done) done(); }
-    }, 50);
-  }
-  function ensure(name) {
-    if (el && el._name === name) return el;
-    if (el) { clearInterval(fade); el.pause(); }
-    el = new Audio(SRC[name]); el._name = name; el.loop = true; el.preload = 'auto'; el.volume = 0;
-    return el;
-  }
-  function play(name) {
-    want = name;
-    if (muted || !SRC[name]) return;
-    const a = ensure(name);
-    const p = a.play();
-    if (p && p.catch) p.catch(() => { /* blocked until the player clicks: resumed by the listener below */ });
-    fadeTo(VOL, 1500);
-  }
-  function pause() {
-    want = null;
-    if (!el) return;
-    const a = el;
-    fadeTo(0, 600, () => { if (!want) a.pause(); });
-  }
   function toggle() {
     muted = !muted;
     try { localStorage.setItem('tq_music', muted ? 'off' : 'on'); } catch (e) { /* ignore */ }
-    if (muted) { clearInterval(fade); if (el) el.pause(); }
-    else if (want) play(want);
+    if (muted) silenceAll(); else if (want) { const w = want; want = null; play(w); }
     refresh();
     return muted;
   }
 
   // browsers block sound until the first click or key press: start as soon as the player does one
   ['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, () => {
-    if (want && !muted && el && el.paused) { const p = el.play(); if (p && p.catch) p.catch(() => {}); fadeTo(VOL, 1000); }
+    if (!want || muted) return;
+    const a = els[want];
+    if (a && a.paused) { startPlaying(a); fade(a, TRACKS[want].vol, 1000); }
   }));
   // silence when the tab is hidden
   document.addEventListener('visibilitychange', () => {
-    if (!el) return;
-    if (document.hidden) el.pause();
-    else if (want && !muted) { const p = el.play(); if (p && p.catch) p.catch(() => {}); }
+    if (document.hidden) { for (const n in els) if (!els[n].paused) { els[n].pause(); els[n]._wasPlaying = true; } }
+    else if (want && !muted) { const a = els[want]; if (a && a._wasPlaying) { startPlaying(a); } for (const n in els) els[n]._wasPlaying = false; }
   });
-  document.addEventListener('DOMContentLoaded', () => {
-    const b = button(); if (b) b.onclick = toggle;
-    refresh();
-  });
+  document.addEventListener('DOMContentLoaded', () => { const b = button(); if (b) b.onclick = toggle; refresh(); });
 
   window.TQMusic = { play, pause, toggle, isMuted: () => muted };
 })();

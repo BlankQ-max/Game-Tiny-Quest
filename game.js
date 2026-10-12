@@ -190,9 +190,10 @@ const cv=$('cv'),ctx=cv.getContext('2d');ctx.scale(2,2);
 const key=(x,y)=>x+','+y;
 function view(v){
  ['mapView','battleView','textView','pvpView'].forEach(x=>$(x).hidden=x!==v);
- if(window.TQMusic){   // adventure music plays on the map and in battles, and keeps going through shops and story pages
-  if(v==='mapView'||v==='battleView')TQMusic.play('adventure');
-  else if(v==='pvpView')TQMusic.pause();
+ if(window.TQMusic){   // map = adventure music, fights = fighting music, PvP arena = PvP music (shops and story pages keep whatever is playing)
+  if(v==='mapView')TQMusic.play('adventure');
+  else if(v==='battleView')TQMusic.play('battle');
+  else if(v==='pvpView')TQMusic.play('pvp');
  }
 }
 function setMsg(t){$('status').textContent=t}
@@ -201,7 +202,7 @@ function showText(o,cb,btn){
  $('textView').innerHTML=`<div class="card">${o.pic||''}<h2 style="${o.big?'font-size:2.4rem':''}">${o.title}</h2>${o.text.split("\n\n").map(t=>`<p>${t}</p>`).join("")}<button class="primary" id="ok">${btn||'Continue'}</button></div>`;
  $('ok').onclick=cb;$('ok').focus();
 }
-const BUILD=21;
+const BUILD=22;
 function fixExits(){   // older saves kept their own copy of each map and are missing newer exits
  G.forEach((g,i)=>{if(MAPS[i].rows[5][12]==='>'&&g[5][12]==='#')g[5][12]='>'});
 }
