@@ -195,7 +195,7 @@ function showText(o,cb,btn){
  $('textView').innerHTML=`<div class="card">${o.pic||''}<h2 style="${o.big?'font-size:2.4rem':''}">${o.title}</h2>${o.text.split("\n\n").map(t=>`<p>${t}</p>`).join("")}<button class="primary" id="ok">${btn||'Continue'}</button></div>`;
  $('ok').onclick=cb;$('ok').focus();
 }
-const BUILD=19;
+const BUILD=20;
 function fixExits(){   // older saves kept their own copy of each map and are missing newer exits
  G.forEach((g,i)=>{if(MAPS[i].rows[5][12]==='>'&&g[5][12]==='#')g[5][12]='>'});
 }
@@ -415,9 +415,10 @@ function drawB(k='',n=''){
  if(k==='eblock'){ec=' e-hop';po='<span class="fx spark">✦</span>';pn=num('blk','Blocked! -'+n)}
  if(k==='edie')ec=' edie';
  if(k==='pdie')pc+=' pdie';
- $('battleView').innerHTML=`<div class="card bt${cc}"><div class="arena">
-  <div class="fighter"><div class="sprite${pc}">${hero(P.sw,P.ar)}${po}</div>${pn}<b>Arlo</b><div class="bar"><i style="width:${P.hp/P.max*100}%"></i></div><div class="muted">${P.hp} / ${P.max} HP</div></div>
-  <div class="fighter"><div class="sprite${ec}">${svg(B)}${eo}</div>${en}<b>${B.name}</b><div class="bar foe"><i style="width:${B.hp/B.max*100}%"></i></div><div class="muted">${B.hp} / ${B.max} HP</div></div></div>
+ $('battleView').innerHTML=`<div class="card bt${cc}"><div class="arena stage">
+  <canvas class="abg" width="640" height="360" aria-hidden="true"></canvas>
+  <div class="fighter"><div class="finfo"><b>Arlo</b><div class="bar"><i style="width:${P.hp/P.max*100}%"></i></div><div class="muted">${P.hp} / ${P.max} HP</div></div><div class="sprite${pc}">${hero(P.sw,P.ar)}${po}</div>${pn}</div>
+  <div class="fighter"><div class="finfo"><b>${B.name}</b><div class="bar foe"><i style="width:${B.hp/B.max*100}%"></i></div><div class="muted">${B.hp} / ${B.max} HP</div></div><div class="sprite${ec}">${svg(B)}${eo}</div>${en}</div></div>
   <div class="intent">${B.hp>0?(B.intent==='h'?"⚠ It is winding up a big hit. Guard!":"It jiggles menacingly."):""}</div>
   <div class="actions">
    <button id="a1" ${busy?'disabled':''}>⚔ Sword slash${pw}</button>
@@ -426,6 +427,13 @@ function drawB(k='',n=''){
    <button id="a4" ${busy||P.cd?'disabled':''}>💥 Power strike${P.cd?` (${P.cd})`:''}</button></div>
   <div class="log">${log.map(l=>`<div>${l}</div>`).join("")}</div></div>`;
  ['atk','grd','heal','pow'].forEach((q,i)=>$('a'+(i+1)).onclick=()=>act(q));
+ paintArena();
+}
+function paintArena(){   // the battle background is the same artwork as the PvP arena of this level
+ try{
+  const cv=document.querySelector('#battleView .abg');
+  if(cv&&window.TQPvp)cv.getContext('2d').drawImage(TQPvp.bg(TQPvp.levelArena(cur)),0,0,cv.width,cv.height);
+ }catch(e){/* the plain background is fine */}
 }
 function act(k){
  if(busy)return;busy=true;let kind,n=0;

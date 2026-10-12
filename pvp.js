@@ -995,6 +995,8 @@ function wirePad() {
 
 window.TQPvp = {
   open(gear) { PV.gear = gear || { sw: 0, ar: 0 }; PV.step = 1; wirePad(); picker(); },
+  levelArena: i => AORDER[i] || 'village',     // adventure level number -> arena name
+  bg: getBG,                                   // the arena background (a canvas), also used by the turn-based battles
   _engine: { createMatch, step, cpuInput, FIGHTERS, ORDER, LEVELS, ATK, FLOOR, W, ARENAS, AORDER }
 };
 })();
