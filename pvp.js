@@ -439,7 +439,7 @@ const down = {}; let edge = {};
 /* ---------- sound ---------- */
 let AC = null;
 function sfx(t) {
-  if (muted) return;
+  if (muted || (window.TQMusic && TQMusic.isMuted && TQMusic.isMuted())) return;
   try {
     AC = AC || new (window.AudioContext || window.webkitAudioContext)();
     if (AC.state === 'suspended') AC.resume();
@@ -778,14 +778,17 @@ function drawBar(c, x, w, f, right) {
   c.fillStyle = '#ffd23f'; c.fillRect(px(g), y, w * g, h);                        // trailing damage
   c.fillStyle = r > .3 ? '#5cd05c' : '#e0463c'; c.fillRect(px(r), y, w * r, h);   // health
   c.fillStyle = 'rgba(255,255,255,.25)'; c.fillRect(px(r), y, w * r, h / 2);
-  // energy
-  const e = f.en / 100, ey = y + h + 8;
-  c.fillStyle = 'rgba(0,0,0,.55)'; c.fillRect(x - 3, ey - 2, w * .6 + 6, 14);
+  // energy (anchored to the outer edge: left for P1, right for P2)
   const ew = w * .6, ex = right ? x + w - ew : x;
-  const ready = f.en >= f.d.cost;
+  const e = f.en / 100, ey = y + h + 8, ready = f.en >= f.d.cost;
+  c.fillStyle = 'rgba(0,0,0,.55)'; c.fillRect(ex - 3, ey - 2, ew + 6, 14);
   c.fillStyle = ready ? '#ffb347' : '#4aa8d8';
   c.fillRect(right ? ex + ew - ew * e : ex, ey, ew * e, 10);
-  if (ready) { c.strokeStyle = '#fff'; c.lineWidth = 1; c.strokeRect(ex, ey, ew, 10); }
+  const tx = right ? ex + ew - ew * f.d.cost / 100 : ex + ew * f.d.cost / 100;   // white tick: enough energy for the special
+  c.fillStyle = '#fff'; c.fillRect(tx - 1, ey - 2, 2, 14);
+  if (ready) { c.strokeStyle = '#ffd23f'; c.lineWidth = 2; c.strokeRect(ex, ey, ew, 10); }
+  c.font = 'bold 13px Georgia, serif'; c.textAlign = right ? 'right' : 'left'; c.fillStyle = ready ? '#ffd23f' : '#cfe3f1';
+  c.fillText(ready ? 'SPECIAL READY!' : 'ENERGY', right ? ex - 8 : ex + ew + 8, ey + 10);
 }
 
 function banner(c, text, sub, y) {
@@ -998,6 +1001,7 @@ window.TQPvp = {
   open(gear) { PV.gear = gear || { sw: 0, ar: 0 }; PV.step = 1; wirePad(); picker(); },
   levelArena: i => AORDER[i] || 'village',     // adventure level number -> arena name
   bg: getBG,                                   // the arena background (a canvas), also used by the turn-based battles
+  _state: () => M,                             // for tests
   _engine: { createMatch, step, cpuInput, FIGHTERS, ORDER, LEVELS, ATK, FLOOR, W, ARENAS, AORDER }
 };
 })();
