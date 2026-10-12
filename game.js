@@ -202,7 +202,7 @@ function showText(o,cb,btn){
  $('textView').innerHTML=`<div class="card">${o.pic||''}<h2 style="${o.big?'font-size:2.4rem':''}">${o.title}</h2>${o.text.split("\n\n").map(t=>`<p>${t}</p>`).join("")}<button class="primary" id="ok">${btn||'Continue'}</button></div>`;
  $('ok').onclick=cb;$('ok').focus();
 }
-const BUILD=22;
+const BUILD=23;
 function fixExits(){   // older saves kept their own copy of each map and are missing newer exits
  G.forEach((g,i)=>{if(MAPS[i].rows[5][12]==='>'&&g[5][12]==='#')g[5][12]='>'});
 }
@@ -304,7 +304,7 @@ function move(dx,dy){
  const c=G[cur][ny][nx],k=key(nx,ny);
  if(F[cur][k])return startBattle(k);
  if(c==='#'||c==='~')return;
- if(c==='H'){P.hp=P.max;P.cd=0;P.ck={map:cur,x:pl.x,y:pl.y,hx:nx,hy:ny};setMsg("You rest at the house. HP restored. 🚩 Checkpoint saved!");save(true);return hud()}
+ if(c==='H'){P.hp=P.max;P.cd=0;P.ck={map:cur,x:pl.x,y:pl.y,hx:nx,hy:ny};setMsg("You rest at the house. HP restored. 🚩 Checkpoint saved!");if(window.TQSfx)TQSfx.play('rest');save(true);return hud()}
  if(c==='S')return shop();
  if(c==='C'||c==='k')return chest(nx,ny,c);
  if(c==='>'){const n=Object.keys(F[cur]).length;if(!exitOpen())return setMsg(`Clear the room first! ${n} slime${n>1?'s':''} left.`);return go(cur+1,'P')}
@@ -315,11 +315,12 @@ function move(dx,dy){
 function chest(x,y,c){
  if(c==='k'){
   if(Object.keys(F[cur]).length)return setMsg("Slimes still guard this chest. Defeat them all first.");
-  P.key=1;G[cur][y][x]='.';setMsg("You found the Throne Room key! 🗝️");return hud()||drawMap();
+  P.key=1;G[cur][y][x]='.';if(window.TQSfx)TQSfx.play('chest');setMsg("You found the Throne Room key! 🗝️");return hud()||drawMap();
  }
  const r=CH[cur+':'+x+','+y]||{c:10};
  const rc=Math.round((r.c||0)*REWARD*LV(cur)),rj=Math.round((r.j||0)*2*(1+.3*cur));
  P.coins+=rc;P.jelly+=rj;P.pot+=r.pot||0;G[cur][y][x]='.';
+ if(window.TQSfx)TQSfx.play('chest');
  setMsg(`Chest opened: +${rc} coins${rj?`, +${rj} jelly`:''}${r.pot?`, +${r.pot} acorn snacks`:''}.`);
  hud();drawMap();
 }
@@ -351,8 +352,8 @@ function shop(msg){
  <button id="b1" ${P.coins>=8&&P.pot<9?'':'disabled'}>🌰 Acorn snack, heals ${heal} (you have ${P.pot}) — 8 coins</button>
  ${ups.map((x,i)=>`<button id="u${i}" ${x.ok?'':'disabled'}>${x.u.l}${x.c?` (Lv ${x.lv}→${x.lv+1}) — ${x.c[0]} coins, ${x.c[1]} jelly`:' — maxed ✔'}</button>`).join('')}
  <button class="primary" id="b4">Say goodbye to Bobo</button></div></div>`;
- $('b1').onclick=()=>{P.coins-=8;P.pot++;shop("Fresh from the oak! Mind the shells.")};
- ups.forEach((x,i)=>$('u'+i).onclick=()=>{P.coins-=x.c[0];P.jelly-=x.c[1];P[x.u.id]=x.lv+1;if(x.u.fx)x.u.fx();shop(x.u.done)});
+ $('b1').onclick=()=>{P.coins-=8;P.pot++;if(window.TQSfx)TQSfx.play('buy');shop("Fresh from the oak! Mind the shells.")};
+ ups.forEach((x,i)=>$('u'+i).onclick=()=>{P.coins-=x.c[0];P.jelly-=x.c[1];P[x.u.id]=x.lv+1;if(x.u.fx)x.u.fx();if(window.TQSfx)TQSfx.play('buy');shop(x.u.done)});
  $('b4').onclick=toMap;
 }
 
@@ -409,6 +410,7 @@ function enableBtns(){
  $('a1').disabled=$('a2').disabled=false;$('a3').disabled=!P.pot;$('a4').disabled=!!P.cd;
 }
 function drawB(k='',n=''){
+ if(k&&window.TQSfx){const s={slash:'slash',power:'power',guard:'guard',heal:'heal',eatk:'ehit',eheavy:'eheavy',eblock:'block',edie:'defeat',pdie:'lose'}[k];if(s)TQSfx.play(s)}
  const pw=P.sw?` (+${P.sw*2})`:"",col=['#ffffff','#e3edf7','#f2c94c','#6fe3ff','#ff6bd6','#fff6a8'][P.sw];
  const arc=(c,f)=>`<svg class="fx slash ${f?'s2':''}" viewBox="0 0 100 100"><path d="${f?'M88 80 Q52 10 10 24':'M12 82 Q48 8 92 22'}" stroke="${c}" stroke-width="9" fill="none" stroke-linecap="round" pathLength="1"/></svg>`;
  const ring=c=>`<i class="fx ring" style="border-color:${c}"></i>`;
@@ -470,6 +472,7 @@ function win(){
  const br=BR[id];if(br){P.coins+=br[0];P.jelly+=br[1]}
  const bc=clr&&cur>0?Math.round(30*LV(cur)):0,bj=clr&&cur>0?1+Math.floor(cur/2):0;   // room-clear bonus
  P.coins+=bc;P.jelly+=bj;
+ if(window.TQSfx)TQSfx.play('coin',150);
  const bonus=bc?` Room bonus: +${bc} coins, +${bj} jelly.`:'';
  if(id==='K')return showText({title:"The Slime King falls!",text:"The Slime King drops his crown, hiccups, and admits he was only guarding the Moon Crumb for someone colder.\n\nWith a crack, the east wall of the throne room splits open. A freezing wind pours in from the Frostbite Peak."},()=>{setMsg("A new exit has opened on the east wall. Boss reward: +"+BR.K[0]+" coins, +"+BR.K[1]+" jelly!"+bonus);toMap()},"Climb the peak");
  if(id==='B')return showText({title:"The Frost Titan falls!",text:"The Frost Titan cracks, hiccups, and mutters that it only froze the Moon Crumb's light to keep it safe from something hungrier.\n\nWith a hiss of steam, the east ice wall melts away. Far beyond the Ember Caverns and the Murk Marsh, a dark moon hangs over the Moon Spire."},()=>{setMsg("The east exit is open. Boss reward: +"+BR.B[0]+" coins, +"+BR.B[1]+" jelly!"+bonus);toMap()},"Keep climbing");
