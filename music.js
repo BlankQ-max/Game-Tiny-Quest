@@ -3,7 +3,7 @@
    The player's on/off choice is remembered (the 🔊 button in the corner). */
 (function () {
   'use strict';
-  const SRC = { adventure: 'audio/adventure.mp3' };
+  const SRC = { adventure: 'adventure.mp3' };
   const VOL = .35;
   let el = null, want = null, fade = null, muted = false;
   try { muted = localStorage.getItem('tq_music') === 'off'; } catch (e) { /* storage blocked: music stays on */ }
